@@ -29,19 +29,20 @@ export default {
       return new Response('Invalid JSON', { status: 400 })
     }
 
+    const start = Date.now()
     const prompt = extractMessages(body)
-    const hasPII = detectPII(prompt)
+    const { detected, matches } = detectPII(prompt)
     const compliance = request.headers.get('X-Privedge-Compliance')
 
-    if (hasPII && compliance) {
-      return routeToEdge(body, env)
+    if (detected && compliance) {
+      return routeToEdge(body, env, matches, start)
     }
 
-    return routeToCloud(body, request, env)
+    return routeToCloud(body, request, env, matches, start)
   },
 }
 
-async function routeToEdge(body: unknown, env: Env): Promise<Response> {
+async function routeToEdge(body: unknown, env: Env, piiMatches: number, start: number): Promise<Response> {
   const b = body as Record<string, unknown>
   const messages = b.messages as { role: string; content: string }[]
 
@@ -53,8 +54,10 @@ async function routeToEdge(body: unknown, env: Env): Promise<Response> {
     {
       id: `privedge-${Date.now()}`,
       object: 'chat.completion',
-      model: 'llama-3.2-1b-instruct',
+      model: '@cf/meta/llama-3.2-1b-instruct',
       routed_to: 'edge',
+      pii_matches: piiMatches,
+      latency_ms: Date.now() - start,
       choices: [
         {
           index: 0,
@@ -67,7 +70,7 @@ async function routeToEdge(body: unknown, env: Env): Promise<Response> {
   )
 }
 
-async function routeToCloud(body: unknown, request: Request, env: Env): Promise<Response> {
+async function routeToCloud(body: unknown, request: Request, env: Env, piiMatches: number, start: number): Promise<Response> {
   const authHeader = request.headers.get('Authorization') ?? `Bearer ${env.CLOUD_API_KEY}`
 
   const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
@@ -81,7 +84,7 @@ async function routeToCloud(body: unknown, request: Request, env: Env): Promise<
 
   const data = await response.json()
   return Response.json(
-    { ...data, routed_to: 'cloud' },
+    { ...data, routed_to: 'cloud', pii_matches: piiMatches, latency_ms: Date.now() - start },
     { status: response.status, headers: CORS }
   )
 }

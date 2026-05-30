@@ -8,8 +8,9 @@ const PII_PATTERNS = [
   /\b(paciente|patient|diagnos|historial|clinical|medical)\b/i,
 ]
 
-export function detectPII(text: string): boolean {
-  return PII_PATTERNS.some(pattern => pattern.test(text))
+export function detectPII(text: string): { detected: boolean; matches: number } {
+  const matches = PII_PATTERNS.filter(pattern => pattern.test(text)).length
+  return { detected: matches > 0, matches }
 }
 
 export function extractMessages(body: unknown): string {
