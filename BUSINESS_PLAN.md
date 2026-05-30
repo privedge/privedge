@@ -137,7 +137,62 @@ Margen:     $44/mes por cliente (~90%)
 
 ---
 
+## Licencia
+
+**MIT** — no es solo un detalle técnico, es una decisión estratégica.
+
+En un producto de privacidad y compliance, el código cerrado genera desconfianza automática. MIT permite que cualquier empresa audite el código, lo que elimina el principal blocker en ventas enterprise: *"¿Cómo sé que realmente no estáis guardando nuestros datos?"*
+
+La respuesta es: *"Lee el código."*
+
+---
+
+## Modos de uso — Los tres caminos
+
+### 1. Self-hosted (siempre gratis)
+El developer clona el repo, despliega en su propia cuenta de Cloudflare y usa el SDK apuntando a su Worker. Paga cero. Control total.
+
+```
+git clone github.com/privedge/privedge
+wrangler deploy
+```
+
+### 2. Cloud hosted (Free + Pro)
+El developer no toca Cloudflare. Solo se registra en `privedge.io`, obtiene una API key y cambia una línea en el SDK.
+
+```typescript
+// Antes: tu worker propio
+workerUrl: 'https://mi-worker.workers.dev'
+
+// Después: cloud de Privedge
+workerUrl: 'https://api.privedge.io'
+```
+
+Privedge gestiona la infra, las actualizaciones, el escalado. El developer paga por volumen.
+
+### 3. Híbrido — Self-host proxy + Cloud dashboard (Enterprise)
+La empresa tiene requisitos de data residency — el proxy tiene que correr en su propia cuenta de Cloudflare. Pero quiere el dashboard de logs, alertas y reportes de compliance sin construirlo.
+
+```
+Su Worker (su cuenta Cloudflare) → envia metadata → Dashboard Privedge
+```
+
+Los prompts nunca salen de su infra. Solo la metadata de auditoría (timestamp, routed_to, pii_matches, latency) llega al dashboard.
+
+---
+
 ## Go-to-Market
+
+### Secuencia de lanzamiento (3 pasos)
+
+**Paso 1 — OSS launch (ahora)**
+SDK y proxy con licencia MIT públicos. README excelente. La comunidad empieza a usarlo y dar feedback técnico.
+
+**Paso 2 — Cloud hosted (Fase 3)**
+`privedge.io` live. Registro, API key, tier Free y Pro. El developer no tiene que configurar nada.
+
+**Paso 3 — Enterprise dashboard (Fase 4)**
+Dashboard con audit logs, compliance reports, SSO. Desbloquea el modelo híbrido y los contratos enterprise.
 
 ### Distribución orgánica (0-6 meses)
 El developer-first GTM. Sin ventas, sin cold outreach.
@@ -149,12 +204,14 @@ El developer-first GTM. Sin ventas, sin cold outreach.
 5. **Dev communities** — healthcare devs, fintech devs, GDPR-focused Slack/Discord
 
 ### Conversión (6-12 meses)
-El developer adopta → la empresa donde trabaja necesita dashboard para auditoría → venta enterprise.
+El developer adopta gratis → la empresa donde trabaja necesita compliance → venta enterprise.
 
-El ciclo:
 ```
-Developer usa free → sube a Pro por el dashboard →
-empresa pide audit logs para cumplimiento → Enterprise
+Developer usa Free (self-hosted o cloud)
+        ↓
+Sube a Pro por el dashboard
+        ↓
+Empresa pide audit logs + data residency → Enterprise híbrido
 ```
 
 ### Verticales prioritarios (en orden)
