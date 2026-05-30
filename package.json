@@ -1,0 +1,12 @@
+{
+  "name": "privedge",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev:worker": "pnpm --filter worker dev",
+    "dev:sdk": "pnpm --filter sdk dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  }
+}
