@@ -2,6 +2,7 @@
   "name": "@privedge/sdk",
   "version": "0.0.1",
   "description": "Privacy on the edge — drop-in AI proxy with automatic PII routing",
+  "files": ["dist"],
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
