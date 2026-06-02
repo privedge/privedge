@@ -1,4 +1,13 @@
-import { detectPII, extractMessages } from './pii'
+import {
+  detectPII,
+  detectPIINER,
+  extractMessages,
+  getMessages,
+  anonymize,
+  deanonymize,
+  type AnonMap,
+  type NerEntity,
+} from './pii'
 
 export interface Env {
   AI: Ai
@@ -17,7 +26,6 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS })
     }
-
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
     }
@@ -30,61 +38,111 @@ export default {
     }
 
     const start = Date.now()
-    const prompt = extractMessages(body)
-    const { detected, matches } = detectPII(prompt)
     const compliance = request.headers.get('X-Privedge-Compliance')
+    const prompt = extractMessages(body)
 
-    if (detected && compliance) {
-      return routeToEdge(body, env, matches, start)
+    // Without compliance header — pass through to cloud untouched
+    if (!compliance) {
+      return routeToCloud(body, request, env, 0, [], false, start)
     }
 
-    return routeToCloud(body, request, env, matches, start)
+    // Hybrid detection: regex first (fast) → NER only if regex misses
+    const { detected: regexDetected, matches } = detectPII(prompt)
+
+    let detected = regexDetected
+    let nerEntities: NerEntity[] = []
+
+    if (!detected) {
+      const ner = await detectPIINER(prompt, env.AI)
+      detected = ner.detected
+      nerEntities = ner.entities
+    }
+
+    if (!detected) {
+      return routeToCloud(body, request, env, 0, [], false, start)
+    }
+
+    // PII detected — anonymize → cloud → de-anonymize
+    const messages = getMessages(body)
+    const { messages: anonMessages, map } = anonymize(messages, nerEntities)
+    const anonBody = { ...(body as Record<string, unknown>), messages: anonMessages }
+
+    return routeToCloudAnon(anonBody, request, env, matches, nerEntities, map, start)
   },
 }
 
-async function routeToEdge(body: unknown, env: Env, piiMatches: number, start: number): Promise<Response> {
-  const b = body as Record<string, unknown>
-  const messages = b.messages as { role: string; content: string }[]
-
-  const result = await env.AI.run('@cf/meta/llama-3.2-1b-instruct' as Parameters<Ai['run']>[0], {
-    messages,
-  })
-
-  return Response.json(
-    {
-      id: `privedge-${Date.now()}`,
-      object: 'chat.completion',
-      model: '@cf/meta/llama-3.2-1b-instruct',
-      routed_to: 'edge',
-      pii_matches: piiMatches,
-      latency_ms: Date.now() - start,
-      choices: [
-        {
-          index: 0,
-          message: { role: 'assistant', content: (result as { response: string }).response },
-          finish_reason: 'stop',
-        },
-      ],
-    },
-    { headers: CORS }
-  )
-}
-
-async function routeToCloud(body: unknown, request: Request, env: Env, piiMatches: number, start: number): Promise<Response> {
+async function routeToCloudAnon(
+  anonBody: unknown,
+  request: Request,
+  env: Env,
+  piiMatches: number,
+  nerEntities: NerEntity[],
+  map: AnonMap,
+  start: number,
+): Promise<Response> {
   const authHeader = request.headers.get('Authorization') ?? `Bearer ${env.CLOUD_API_KEY}`
 
   const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: authHeader,
+    headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+    body: JSON.stringify(anonBody),
+  })
+
+  if (!response.ok) {
+    const text = await response.text()
+    return new Response(text, { status: response.status, headers: CORS })
+  }
+
+  const data = (await response.json()) as Record<string, unknown>
+
+  // De-anonymize all choice message contents
+  const choices = (data.choices as Array<Record<string, unknown>>)?.map(choice => {
+    const msg = choice.message as Record<string, string> | undefined
+    if (!msg?.content) return choice
+    return { ...choice, message: { ...msg, content: deanonymize(msg.content, map) } }
+  })
+
+  return Response.json(
+    {
+      ...data,
+      choices,
+      routed_to: 'cloud',
+      anonymized: true,
+      pii_matches: piiMatches,
+      ner_entities: nerEntities.map(e => e.type),
+      latency_ms: Date.now() - start,
     },
+    { status: response.status, headers: CORS },
+  )
+}
+
+async function routeToCloud(
+  body: unknown,
+  request: Request,
+  env: Env,
+  piiMatches: number,
+  nerEntities: NerEntity[],
+  anonymized: boolean,
+  start: number,
+): Promise<Response> {
+  const authHeader = request.headers.get('Authorization') ?? `Bearer ${env.CLOUD_API_KEY}`
+
+  const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: authHeader },
     body: JSON.stringify(body),
   })
 
-  const data = await response.json()
+  const data = (await response.json()) as Record<string, unknown>
   return Response.json(
-    { ...data, routed_to: 'cloud', pii_matches: piiMatches, latency_ms: Date.now() - start },
-    { status: response.status, headers: CORS }
+    {
+      ...data,
+      routed_to: 'cloud',
+      anonymized,
+      pii_matches: piiMatches,
+      ner_entities: nerEntities.map(e => e.type),
+      latency_ms: Date.now() - start,
+    },
+    { status: response.status, headers: CORS },
   )
 }

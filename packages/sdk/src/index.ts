@@ -22,6 +22,10 @@ export interface ChatCompletionResponse {
   object: string
   model: string
   routed_to: 'edge' | 'cloud'
+  anonymized: boolean
+  pii_matches: number
+  ner_entities: string[]
+  latency_ms: number
   choices: {
     index: number
     message: Message
