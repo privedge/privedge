@@ -8,16 +8,37 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical)\b/gi, type: 'MEDICAL_KW' },
 ]
 
+const SECRET_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
+  { pattern: /AKIA[0-9A-Z]{16}/g,                                                   type: 'SECRET_CLOUD_KEY'  },
+  { pattern: /postgres(?:ql)?:\/\/[^\s"'`>]+/gi,                                    type: 'SECRET_DB_URI'     },
+  { pattern: /mongodb(?:\+srv)?:\/\/[^\s"'`>]+/gi,                                  type: 'SECRET_DB_URI'     },
+  { pattern: /redis:\/\/[^\s"'`>]+/gi,                                               type: 'SECRET_DB_URI'     },
+  { pattern: /eyJ[a-zA-Z0-9_-]{10,}\.eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+/g,    type: 'SECRET_JWT'        },
+  { pattern: /\bsk-[a-zA-Z0-9]{20,}\b/g,                                            type: 'SECRET_API_KEY'    },
+  { pattern: /(?:secret|api[_-]?key|access[_-]?token|private[_-]?key)\s*[:=]\s*['"]?[a-zA-Z0-9_\-.]{20,}/gi, type: 'SECRET_API_KEY' },
+]
+
 export type NerEntity = { type: string; value: string }
 
 // ── Detection ──────────────────────────────────────────────────────────────
 
-export function detectPII(text: string): { detected: boolean; matches: number } {
-  const matches = PII_PATTERNS.filter(({ pattern }) => {
+export function detectPII(text: string): { detected: boolean; matches: number; types: string[] } {
+  const types: string[] = []
+  for (const { pattern, type } of PII_PATTERNS) {
     pattern.lastIndex = 0
-    return pattern.test(text)
-  }).length
-  return { detected: matches > 0, matches }
+    if (pattern.test(text)) types.push(type)
+  }
+  return { detected: types.length > 0, matches: types.length, types }
+}
+
+export function detectSecrets(text: string): { detected: boolean; types: string[] } {
+  const seen = new Set<string>()
+  for (const { pattern, type } of SECRET_PATTERNS) {
+    pattern.lastIndex = 0
+    if (pattern.test(text)) seen.add(type)
+  }
+  const types = Array.from(seen)
+  return { detected: types.length > 0, types }
 }
 
 const nerPrompt = (text: string) =>
@@ -71,7 +92,17 @@ export function anonymize(
   const anonymizeText = (text: string): string => {
     let result = text
 
-    // Regex-based PII — structured patterns
+    // Secrets first (longer patterns, more specific — order matters)
+    for (const { pattern, type } of SECRET_PATTERNS) {
+      pattern.lastIndex = 0
+      result = result.replace(pattern, match => {
+        const t = token(type)
+        map[t] = match
+        return t
+      })
+    }
+
+    // Regex-based PII
     for (const { pattern, type } of PII_PATTERNS) {
       pattern.lastIndex = 0
       result = result.replace(pattern, match => {
@@ -81,7 +112,7 @@ export function anonymize(
       })
     }
 
-    // NER-detected entities — semantic PII
+    // NER-detected entities
     for (const { type, value } of nerEntities) {
       if (!result.includes(value)) continue
       const t = token(type)

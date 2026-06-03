@@ -1,5 +1,6 @@
 import {
   detectPII,
+  detectSecrets,
   detectPIINER,
   extractMessages,
   getMessages,
@@ -10,12 +11,15 @@ import {
 } from './pii'
 import { validateKey } from './auth'
 import { checkRateLimit } from './ratelimit'
+import { writeLog } from './logger'
 
 export interface Env {
   AI: Ai
   OPENAI_BASE_URL: string
   CLOUD_API_KEY: string
   PRIVEDGE_KEYS: KVNamespace
+  SUPABASE_URL: string
+  SUPABASE_SERVICE_KEY: string
 }
 
 const CORS = {
@@ -29,7 +33,7 @@ function authError(message: string, status: number, extra?: Record<string, unkno
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: CORS })
     }
@@ -37,13 +41,11 @@ export default {
       return new Response('Method not allowed', { status: 405 })
     }
 
-    // Auth — must present a valid pvdg_live_ key
     const keyData = await validateKey(request, env.PRIVEDGE_KEYS)
     if (!keyData) {
       return authError('Unauthorized — provide a valid Privedge API key', 401)
     }
 
-    // Rate limit
     const rl = await checkRateLimit(keyData.user_id, keyData.tier, env.PRIVEDGE_KEYS)
     const rlHeaders = {
       ...CORS,
@@ -70,30 +72,94 @@ export default {
     const compliance = request.headers.get('X-Privedge-Compliance')
     const prompt = extractMessages(body)
 
+    // Collect detection results for logging
+    let piiTypes: string[] = []
+    let secretTypes: string[] = []
+    let piiMatches = 0
+    let anonymized = false
+
     if (!compliance) {
-      return routeToCloud(body, env, rlHeaders, 0, [], false, start)
+      const response = await routeToCloud(body, env, rlHeaders, start)
+      const latencyMs = Date.now() - start
+      const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
+      const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+      ctx.waitUntil(writeLog(env, {
+        keyData,
+        anonymized: false,
+        piiTypes: [],
+        secretTypes: [],
+        piiMatches: 0,
+        tokensIn: usage?.prompt_tokens ?? null,
+        tokensOut: usage?.completion_tokens ?? null,
+        latencyMs,
+        statusCode: response.status,
+      }))
+      return response
     }
 
-    const { detected: regexDetected, matches } = detectPII(prompt)
+    // Secret detection (always when compliance header present)
+    const secrets = detectSecrets(prompt)
+    secretTypes = secrets.types
 
-    let detected = regexDetected
+    // PII detection — regex first, NER if no match
+    const { detected: regexDetected, matches, types } = detectPII(prompt)
+    piiTypes = types
+    piiMatches = matches
     let nerEntities: NerEntity[] = []
 
+    let detected = regexDetected
     if (!detected) {
       const ner = await detectPIINER(prompt, env.AI)
       detected = ner.detected
       nerEntities = ner.entities
+      if (detected) piiTypes = nerEntities.map(e => e.type)
     }
 
-    if (!detected) {
-      return routeToCloud(body, env, rlHeaders, 0, [], false, start)
+    const hasAnything = detected || secrets.detected
+
+    if (!hasAnything) {
+      const response = await routeToCloud(body, env, rlHeaders, start)
+      const latencyMs = Date.now() - start
+      const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
+      const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+      ctx.waitUntil(writeLog(env, {
+        keyData,
+        anonymized: false,
+        piiTypes: [],
+        secretTypes,
+        piiMatches: 0,
+        tokensIn: usage?.prompt_tokens ?? null,
+        tokensOut: usage?.completion_tokens ?? null,
+        latencyMs,
+        statusCode: response.status,
+      }))
+      return response
     }
 
+    // Anonymize + route + de-anonymize
+    anonymized = true
     const messages = getMessages(body)
     const { messages: anonMessages, map } = anonymize(messages, nerEntities)
     const anonBody = { ...(body as Record<string, unknown>), messages: anonMessages }
 
-    return routeToCloudAnon(anonBody, env, rlHeaders, matches, nerEntities, map, start)
+    const response = await routeToCloudAnon(anonBody, env, rlHeaders, piiMatches, nerEntities, map, start)
+    const latencyMs = Date.now() - start
+    const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
+    const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
+
+    ctx.waitUntil(writeLog(env, {
+      keyData,
+      anonymized,
+      piiTypes,
+      secretTypes,
+      piiMatches,
+      tokensIn: usage?.prompt_tokens ?? null,
+      tokensOut: usage?.completion_tokens ?? null,
+      latencyMs,
+      statusCode: response.status,
+    }))
+
+    return response
   },
 }
 
@@ -146,9 +212,6 @@ async function routeToCloud(
   body: unknown,
   env: Env,
   extraHeaders: Record<string, string>,
-  piiMatches: number,
-  nerEntities: NerEntity[],
-  anonymized: boolean,
   start: number,
 ): Promise<Response> {
   const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
@@ -165,9 +228,9 @@ async function routeToCloud(
     {
       ...data,
       routed_to: 'cloud',
-      anonymized,
-      pii_matches: piiMatches,
-      ner_entities: nerEntities.map(e => e.type),
+      anonymized: false,
+      pii_matches: 0,
+      ner_entities: [],
       latency_ms: Date.now() - start,
     },
     { status: response.status, headers: extraHeaders },

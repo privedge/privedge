@@ -1,5 +1,5 @@
 const LIMITS: Record<string, number> = {
-  free: 100,
+  free: 1_000,
   pro: 10_000,
   enterprise: 1_000_000,
 }

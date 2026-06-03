@@ -1,6 +1,8 @@
 export interface KeyData {
   user_id: string
   tier: string
+  api_key_id: string
+  api_key_name: string
 }
 
 export async function validateKey(
