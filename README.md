@@ -2,13 +2,15 @@
 
 **Privacy on the edge.**
 
-AI inference proxy that automatically routes sensitive requests to edge models — your data never leaves the node closest to you.
+AI inference proxy with two privacy modes: anonymize PII before sending to cloud, or run inference directly on the Cloudflare edge node. Your data never leaves the node closest to your user.
 
 ## How it works
 
 ```
-Your app → Privedge Worker → PII detected? ──yes──→ Edge model (data stays local)
-                                           └──no───→ OpenAI / cloud API
+Your app → Privedge Worker → PII detected?
+                              ├── pii_strategy: 'anonymize' → redact PII → cloud API → re-inject → response
+                              └── pii_strategy: 'edge'      → CF AI edge model (data stays local)
+                            No PII → cloud API → response
 ```
 
 Drop-in replacement for the OpenAI SDK. One header change, full compliance.
@@ -19,7 +21,7 @@ Drop-in replacement for the OpenAI SDK. One header change, full compliance.
 import Privedge from '@privedge/sdk'
 
 const ai = new Privedge({
-  apiKey: 'your-cloud-api-key',
+  apiKey: 'your-privedge-api-key',
   workerUrl: 'https://privedge-worker.workers.dev',
   compliance: 'hipaa', // 'gdpr' | 'pci' | custom
 })
@@ -30,23 +32,43 @@ const res = await ai.chat.completions.create({
 })
 
 console.log(res.routed_to) // 'edge' | 'cloud'
+console.log(res.pii_detected) // true | false
+```
+
+## Privacy Modes
+
+Each API key has a configurable `pii_strategy`:
+
+| Strategy | Behavior | Use case |
+|----------|----------|----------|
+| `anonymize` | PII redacted before cloud call, re-injected in response | When you need GPT-4 quality but must strip PII |
+| `edge` | Full prompt sent to CF AI model on edge node — no external API call | HIPAA, legal privilege, maximum data residency |
+
+Configure via the [dashboard](https://app.privedge.io) or API:
+
+```bash
+# Switch an API key to edge inference
+curl -X PATCH https://api.privedge.io/api/keys/:id/strategy \
+  -H "Authorization: Bearer <token>" \
+  -d '{"pii_strategy":"edge","edge_model":"@cf/meta/llama-3.2-3b-instruct"}'
 ```
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| [`packages/worker`](./packages/worker) | Cloudflare Worker — PII detection + routing |
+| [`packages/worker`](./packages/worker) | Cloudflare Worker — PII detection, anonymization + edge routing |
 | [`packages/sdk`](./packages/sdk) | `@privedge/sdk` — drop-in OpenAI replacement |
 
-## PII Detection (v1)
+## PII Detection
 
-Regex-based detection for:
+Regex + NER-based detection for:
 - SSN, credit cards, IBAN
 - Email addresses
 - Spanish DNI / NIE
 - Phone numbers
-- Medical keywords (`patient`, `diagnosis`, `historial`...)
+- Medical keywords (`patient`, `diagnosis`, `historial`…)
+- Secret patterns (API keys, tokens, passwords)
 
 ## Deploy
 
@@ -70,12 +92,15 @@ cd packages/worker
 pnpm wrangler login
 ```
 
-### 3. (Optional) Set cloud API key
-
-Only needed if you want to route non-PII requests to OpenAI or another cloud provider.
+### 3. Set secrets
 
 ```bash
+# Required: cloud API key (OpenAI or compatible)
 pnpm wrangler secret put CLOUD_API_KEY
+
+# Optional: default strategy when not set per-key (default: 'anonymize')
+# Set in wrangler.toml: PII_STRATEGY = "anonymize" | "edge"
+# Set in wrangler.toml: EDGE_MODEL = "@cf/meta/llama-3.2-3b-instruct"
 ```
 
 ### 4. Deploy
@@ -87,29 +112,47 @@ pnpm wrangler deploy
 
 ### 5. Test
 
-Send a request with PII — should return `"routed_to": "edge"`:
+PII detected — anonymize mode (default):
 
 ```bash
-# Using httpie
 http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions \
-  X-Privedge-Compliance:hipaa \
+  Authorization:"Bearer <your-key>" \
   model=gpt-4 \
   messages:='[{"role":"user","content":"Patient DNI 12345678Z needs a checkup"}]'
+# → routed_to: "cloud", pii_detected: true, anonymized: true
 ```
 
-Without PII — should return `"routed_to": "cloud"`:
+Edge inference mode:
 
 ```bash
 http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions \
+  Authorization:"Bearer <your-key>" \
+  X-Privedge-Strategy:edge \
   model=gpt-4 \
-  messages:='[{"role":"user","content":"Summarize the Roman Empire"}]'
+  messages:='[{"role":"user","content":"Patient DNI 12345678Z needs a checkup"}]'
+# → routed_to: "edge", pii_detected: true
 ```
+
+## Rate limits
+
+| Tier | Cloud requests/day | Edge requests/day |
+|------|--------------------|-------------------|
+| Free | 1,000 | 50 |
+| Pro | — | 2,000 |
+| Enterprise | — | 50,000 |
 
 ## Roadmap
 
+- [x] Regex PII detection
+- [x] Anonymize + de-anonymize pipeline
+- [x] Auth middleware + per-key rate limiting
+- [x] Request logging (async via `ctx.waitUntil`)
+- [x] Secret detection (API keys, tokens)
+- [x] Dual PII strategy (anonymize vs edge inference)
+- [x] Per-key edge model selection + edge rate limits
+- [x] Dashboard — API keys, strategy config, usage logs
 - [ ] NER model for smarter PII detection
 - [ ] Anthropic / Gemini support
-- [ ] Dashboard — routing logs, compliance reports
 - [ ] SOC2 / HIPAA certification
 
 ## License
