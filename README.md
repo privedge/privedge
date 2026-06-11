@@ -31,8 +31,9 @@ const res = await ai.chat.completions.create({
   messages: [{ role: 'user', content: 'Summarize this patient record...' }],
 })
 
-console.log(res.routed_to) // 'edge' | 'cloud'
-console.log(res.pii_detected) // true | false
+console.log(res.routed_to)  // 'edge' | 'cloud'
+console.log(res.pii_matches) // number of PII tokens detected
+console.log(res.anonymized)  // true if PII was redacted before cloud call
 ```
 
 ## Privacy Modes
@@ -112,25 +113,24 @@ pnpm wrangler deploy
 
 ### 5. Test
 
-PII detected — anonymize mode (default):
+PII detected — anonymize mode (key configured with `pii_strategy: 'anonymize'`):
 
 ```bash
 http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions \
   Authorization:"Bearer <your-key>" \
   model=gpt-4 \
   messages:='[{"role":"user","content":"Patient DNI 12345678Z needs a checkup"}]'
-# → routed_to: "cloud", pii_detected: true, anonymized: true
+# → routed_to: "cloud", anonymized: true, pii_matches: 1
 ```
 
-Edge inference mode:
+Edge inference mode (key configured with `pii_strategy: 'edge'` in the dashboard):
 
 ```bash
 http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions \
   Authorization:"Bearer <your-key>" \
-  X-Privedge-Strategy:edge \
   model=gpt-4 \
   messages:='[{"role":"user","content":"Patient DNI 12345678Z needs a checkup"}]'
-# → routed_to: "edge", pii_detected: true
+# → routed_to: "edge", anonymized: false, pii_matches: 1
 ```
 
 ## Rate limits
