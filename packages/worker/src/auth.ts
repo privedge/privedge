@@ -3,6 +3,9 @@ export interface KeyData {
   tier: string
   api_key_id: string
   api_key_name: string
+  pii_strategy: 'anonymize' | 'edge'
+  edge_model: string           // Workers AI model for edge inference
+  edge_limit: number | null    // null = use tier default
 }
 
 export async function validateKey(

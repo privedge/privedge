@@ -11,6 +11,8 @@ export interface LogEntry {
   tokensOut: number | null
   latencyMs: number
   statusCode: number
+  piiStrategy?: 'anonymize' | 'edge'
+  edgeModel?: string
 }
 
 export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
@@ -35,6 +37,8 @@ export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
         tokens_out: entry.tokensOut,
         latency_ms: entry.latencyMs,
         status_code: entry.statusCode,
+        pii_strategy: entry.piiStrategy ?? 'anonymize',
+        edge_model: entry.edgeModel ?? null,
       }),
     })
   } catch {

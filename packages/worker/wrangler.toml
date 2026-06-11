@@ -5,5 +5,18 @@ compatibility_date = "2024-01-01"
 [ai]
 binding = "AI"
 
+[[kv_namespaces]]
+binding = "PRIVEDGE_KEYS"
+id = "5adc9737ef5a4978a380e024d374fef3"
+
 [vars]
 OPENAI_BASE_URL = "https://api.openai.com"
+PII_STRATEGY = "anonymize"                                 # "anonymize" | "edge" — self-host override
+EDGE_MODEL   = "@cf/meta/llama-3.3-70b-instruct-fp8-fast" # Workers AI model for edge inference
+
+# Secrets (set via: wrangler secret put <NAME>)
+# WEBHOOK_SECRET       → Stripe webhook signing secret
+# RESEND_API_KEY       → Resend transactional email
+# SUPABASE_SERVICE_KEY → Supabase service role key
+# SUPABASE_URL         → Supabase project URL
+# CLOUD_API_KEY        → Default LLM provider key

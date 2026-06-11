@@ -10,7 +10,7 @@ import {
   type NerEntity,
 } from './pii'
 import { validateKey } from './auth'
-import { checkRateLimit } from './ratelimit'
+import { checkRateLimit, checkEdgeRateLimit } from './ratelimit'
 import { writeLog } from './logger'
 
 export interface Env {
@@ -20,6 +20,8 @@ export interface Env {
   PRIVEDGE_KEYS: KVNamespace
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string
+  PII_STRATEGY?: string   // "anonymize" | "edge" — self-host env var fallback
+  EDGE_MODEL?: string     // Workers AI model — self-host env var fallback
 }
 
 const CORS = {
@@ -45,6 +47,9 @@ export default {
     if (!keyData) {
       return authError('Unauthorized — provide a valid Privedge API key', 401)
     }
+
+    const piiStrategy = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge'
+    const edgeModel   = keyData.edge_model ?? env.EDGE_MODEL ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
 
     const rl = await checkRateLimit(keyData.user_id, keyData.tier, env.PRIVEDGE_KEYS)
     const rlHeaders = {
@@ -93,6 +98,7 @@ export default {
         tokensOut: usage?.completion_tokens ?? null,
         latencyMs,
         statusCode: response.status,
+        piiStrategy,
       }))
       return response
     }
@@ -132,11 +138,50 @@ export default {
         tokensOut: usage?.completion_tokens ?? null,
         latencyMs,
         statusCode: response.status,
+        piiStrategy,
       }))
       return response
     }
 
-    // Anonymize + route + de-anonymize
+    // PII detected — bifurcate by strategy
+    if (piiStrategy === 'edge') {
+      const edgeRl = await checkEdgeRateLimit(env, keyData)
+      if (!edgeRl.allowed) {
+        return Response.json(
+          { error: 'Edge inference rate limit exceeded', limit: edgeRl.limit, tier: keyData.tier },
+          {
+            status: 429,
+            headers: {
+              ...rlHeaders,
+              'X-Edge-Limit': String(edgeRl.limit),
+              'X-Edge-Remaining': '0',
+            },
+          },
+        )
+      }
+      const response = await routeToEdge(body, env, {
+        ...rlHeaders,
+        'X-Edge-Limit': String(edgeRl.limit),
+        'X-Edge-Remaining': String(edgeRl.remaining),
+      }, piiMatches, nerEntities, start, edgeModel)
+      const latencyMs = Date.now() - start
+      ctx.waitUntil(writeLog(env, {
+        keyData,
+        anonymized: false,
+        piiTypes,
+        secretTypes,
+        piiMatches,
+        tokensIn: null,
+        tokensOut: null,
+        latencyMs,
+        statusCode: response.status,
+        piiStrategy,
+        edgeModel,
+      }))
+      return response
+    }
+
+    // Anonymize + route + de-anonymize (default: 'anonymize')
     anonymized = true
     const messages = getMessages(body)
     const { messages: anonMessages, map } = anonymize(messages, nerEntities)
@@ -157,10 +202,51 @@ export default {
       tokensOut: usage?.completion_tokens ?? null,
       latencyMs,
       statusCode: response.status,
+      piiStrategy,
     }))
 
     return response
   },
+}
+
+async function routeToEdge(
+  body: unknown,
+  env: Env,
+  extraHeaders: Record<string, string>,
+  piiMatches: number,
+  nerEntities: NerEntity[],
+  start: number,
+  model: string,
+): Promise<Response> {
+  const b = body as Record<string, unknown>
+  const messages = b.messages as Array<{ role: string; content: string }>
+
+  const result = await (env.AI.run as Function)(model, {
+    messages,
+    max_tokens: (b.max_tokens as number) ?? 1024,
+    temperature: (b.temperature as number) ?? 0.7,
+  })
+
+  return Response.json(
+    {
+      id: `chatcmpl-edge-${Date.now()}`,
+      object: 'chat.completion',
+      model,
+      choices: [
+        {
+          index: 0,
+          message: { role: 'assistant', content: (result as { response: string }).response },
+          finish_reason: 'stop',
+        },
+      ],
+      routed_to: 'edge',
+      anonymized: false,
+      pii_matches: piiMatches,
+      ner_entities: nerEntities.map((e: NerEntity) => e.type),
+      latency_ms: Date.now() - start,
+    },
+    { headers: extraHeaders },
+  )
 }
 
 async function routeToCloudAnon(
