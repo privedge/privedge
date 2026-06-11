@@ -23,7 +23,7 @@ import Privedge from '@privedge/sdk'
 const ai = new Privedge({
   apiKey: 'your-privedge-api-key',
   workerUrl: 'https://privedge-worker.workers.dev',
-  compliance: 'hipaa', // 'gdpr' | 'pci' | custom
+  compliance: true, // enable PII detection + routing
 })
 
 const res = await ai.chat.completions.create({
@@ -116,7 +116,7 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 # → routed_to: "cloud", anonymized: true, pii_matches: 1
 ```
 
-Edge inference mode (key configured with `pii_strategy: 'edge'` in the dashboard):
+Edge inference mode (key configured with `pii_strategy: 'edge'`):
 
 ```bash
 http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions \

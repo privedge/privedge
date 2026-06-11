@@ -1,7 +1,7 @@
 export interface PrivedgeOptions {
   apiKey: string
   workerUrl: string
-  compliance?: 'hipaa' | 'gdpr' | 'pci' | string
+  compliance?: boolean // enable PII detection + routing
 }
 
 export interface Message {
@@ -43,7 +43,7 @@ class ChatCompletions {
     }
 
     if (this.client.compliance) {
-      headers['X-Privedge-Compliance'] = this.client.compliance
+      headers['X-Privedge-Compliance'] = '1'
     }
 
     const response = await fetch(`${this.client.workerUrl}/v1/chat/completions`, {
@@ -72,7 +72,7 @@ class Chat {
 export class Privedge {
   apiKey: string
   workerUrl: string
-  compliance?: string
+  compliance?: boolean
   chat: Chat
 
   constructor(options: PrivedgeOptions) {
