@@ -23,7 +23,6 @@ import Privedge from '@privedge/sdk'
 const ai = new Privedge({
   apiKey: 'your-privedge-api-key',
   workerUrl: 'https://privedge-worker.workers.dev',
-  compliance: true, // enable PII detection + routing
 })
 
 const res = await ai.chat.completions.create({

@@ -27,7 +27,7 @@ export interface Env {
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Privedge-Compliance',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
 function authError(message: string, status: number, extra?: Record<string, unknown>): Response {
@@ -74,7 +74,6 @@ export default {
     }
 
     const start = Date.now()
-    const compliance = request.headers.get('X-Privedge-Compliance')
     const prompt = extractMessages(body)
 
     // Collect detection results for logging
@@ -83,27 +82,7 @@ export default {
     let piiMatches = 0
     let anonymized = false
 
-    if (!compliance) {
-      const response = await routeToCloud(body, env, rlHeaders, start)
-      const latencyMs = Date.now() - start
-      const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
-      const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
-      ctx.waitUntil(writeLog(env, {
-        keyData,
-        anonymized: false,
-        piiTypes: [],
-        secretTypes: [],
-        piiMatches: 0,
-        tokensIn: usage?.prompt_tokens ?? null,
-        tokensOut: usage?.completion_tokens ?? null,
-        latencyMs,
-        statusCode: response.status,
-        piiStrategy,
-      }))
-      return response
-    }
-
-    // Secret detection (always when compliance header present)
+    // Secret detection
     const secrets = detectSecrets(prompt)
     secretTypes = secrets.types
 
