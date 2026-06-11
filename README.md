@@ -45,14 +45,7 @@ Each API key has a configurable `pii_strategy`:
 | `anonymize` | PII redacted before cloud call, re-injected in response | When you need GPT-4 quality but must strip PII |
 | `edge` | Full prompt sent to CF AI model on edge node — no external API call | HIPAA, legal privilege, maximum data residency |
 
-Configure via the [dashboard](https://app.privedge.io) or API:
-
-```bash
-# Switch an API key to edge inference
-curl -X PATCH https://api.privedge.io/api/keys/:id/strategy \
-  -H "Authorization: Bearer <token>" \
-  -d '{"pii_strategy":"edge","edge_model":"@cf/meta/llama-3.2-3b-instruct"}'
-```
+The strategy is set via the `pii_strategy` field on the API key (passed to the Worker through KV or the `PII_STRATEGY` env var).
 
 ## Packages
 
@@ -133,14 +126,6 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 # → routed_to: "edge", anonymized: false, pii_matches: 1
 ```
 
-## Rate limits
-
-| Tier | Cloud requests/day | Edge requests/day |
-|------|--------------------|-------------------|
-| Free | 1,000 | 50 |
-| Pro | — | 2,000 |
-| Enterprise | — | 50,000 |
-
 ## Roadmap
 
 - [x] Regex PII detection
@@ -150,7 +135,6 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 - [x] Secret detection (API keys, tokens)
 - [x] Dual PII strategy (anonymize vs edge inference)
 - [x] Per-key edge model selection + edge rate limits
-- [x] Dashboard — API keys, strategy config, usage logs
 - [ ] NER model for smarter PII detection
 - [ ] Anthropic / Gemini support
 - [ ] SOC2 / HIPAA certification
