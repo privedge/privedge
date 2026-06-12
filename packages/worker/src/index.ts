@@ -48,11 +48,11 @@ export default {
       return authError('Unauthorized — provide a valid Privedge API key', 401)
     }
 
-    const piiStrategy = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge'
     const edgeModel   = keyData.edge_model ?? env.EDGE_MODEL ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
-    const colo        = request.cf?.colo ?? null
-    const country     = request.cf?.country ?? null
-    const city        = (request.cf as { city?: string } | undefined)?.city ?? null
+    const cf = request.cf as { colo?: string; country?: string; city?: string } | undefined
+    const cfNode         = cf?.colo ?? null
+    const requestCountry = cf?.country ?? null
+    const requestCity    = cf?.city ?? null
 
     const rl = await checkRateLimit(keyData.user_id, keyData.tier, env.PRIVEDGE_KEYS)
     const rlHeaders = {
@@ -76,18 +76,23 @@ export default {
       return new Response('Invalid JSON', { status: 400 })
     }
 
+    const baseStrategy = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge'
+    const bodyStrategy = (body as Record<string, unknown>)?.pii_strategy
+    const piiStrategy: 'anonymize' | 'edge' =
+      bodyStrategy && keyData.allow_strategy_override === true
+        ? (bodyStrategy as 'anonymize' | 'edge')
+        : baseStrategy
+
     const start = Date.now()
     const prompt = extractMessages(body)
 
     // Collect detection results for logging
     let piiTypes: string[] = []
-    let secretTypes: string[] = []
     let piiMatches = 0
     let anonymized = false
 
-    // Secret detection
+    // Secret detection — add 'SECRET' to piiTypes if detected
     const secrets = detectSecrets(prompt)
-    secretTypes = secrets.types
 
     // PII detection — regex first, NER if no match
     const { detected: regexDetected, matches, types } = detectPII(prompt)
@@ -103,6 +108,8 @@ export default {
       if (detected) piiTypes = nerEntities.map(e => e.type)
     }
 
+    if (secrets.detected) piiTypes = [...piiTypes, 'SECRET']
+
     const hasAnything = detected || secrets.detected
 
     if (!hasAnything) {
@@ -114,16 +121,16 @@ export default {
         keyData,
         anonymized: false,
         piiTypes: [],
-        secretTypes,
+
         piiMatches: 0,
         tokensIn: usage?.prompt_tokens ?? null,
         tokensOut: usage?.completion_tokens ?? null,
         latencyMs,
         statusCode: response.status,
         piiStrategy,
-        colo,
-        country,
-        city,
+        cfNode,
+        requestCountry,
+        requestCity,
       }))
       return response
     }
@@ -154,7 +161,7 @@ export default {
         keyData,
         anonymized: false,
         piiTypes,
-        secretTypes,
+
         piiMatches,
         tokensIn: null,
         tokensOut: null,
@@ -162,9 +169,9 @@ export default {
         statusCode: response.status,
         piiStrategy,
         edgeModel,
-        colo,
-        country,
-        city,
+        cfNode,
+        requestCountry,
+        requestCity,
       }))
       return response
     }
@@ -184,16 +191,16 @@ export default {
       keyData,
       anonymized,
       piiTypes,
-      secretTypes,
+      hasSecret: secrets.detected,
       piiMatches,
       tokensIn: usage?.prompt_tokens ?? null,
       tokensOut: usage?.completion_tokens ?? null,
       latencyMs,
       statusCode: response.status,
       piiStrategy,
-      colo,
-      country,
-      city,
+      cfNode,
+      requestCountry,
+      requestCity,
     }))
 
     return response

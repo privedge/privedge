@@ -6,6 +6,7 @@ export interface KeyData {
   pii_strategy: 'anonymize' | 'edge'
   edge_model: string           // Workers AI model for edge inference
   edge_limit: number | null    // null = use tier default
+  allow_strategy_override?: boolean  // demo keys only — allows pii_strategy in request body
 }
 
 export async function validateKey(

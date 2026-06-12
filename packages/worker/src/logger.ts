@@ -5,7 +5,7 @@ export interface LogEntry {
   keyData: KeyData
   anonymized: boolean
   piiTypes: string[]
-  secretTypes: string[]
+  hasSecret?: boolean
   piiMatches: number
   tokensIn: number | null
   tokensOut: number | null
@@ -13,9 +13,9 @@ export interface LogEntry {
   statusCode: number
   piiStrategy?: 'anonymize' | 'edge'
   edgeModel?: string
-  colo?: string | null
-  country?: string | null
-  city?: string | null
+  cfNode?: string | null
+  requestCountry?: string | null
+  requestCity?: string | null
 }
 
 export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
@@ -34,7 +34,7 @@ export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
         api_key_name: entry.keyData.api_key_name || null,
         anonymized: entry.anonymized,
         pii_types: entry.piiTypes,
-        secret_types: entry.secretTypes,
+
         pii_matches: entry.piiMatches,
         tokens_in: entry.tokensIn,
         tokens_out: entry.tokensOut,
@@ -42,9 +42,9 @@ export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
         status_code: entry.statusCode,
         pii_strategy: entry.piiStrategy ?? 'anonymize',
         edge_model: entry.edgeModel ?? null,
-        colo: entry.colo ?? null,
-        country: entry.country ?? null,
-        city: entry.city ?? null,
+        cf_node: entry.cfNode ?? null,
+        request_country: entry.requestCountry ?? null,
+        request_city: entry.requestCity ?? null,
       }),
     })
   } catch {
