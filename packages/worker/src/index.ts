@@ -113,7 +113,8 @@ export default {
     const hasAnything = detected || secrets.detected
 
     if (!hasAnything) {
-      const response = await routeToCloud(body, env, rlHeaders, start)
+      const { pii_strategy: _ps2, ...cleanBody } = body as Record<string, unknown>
+      const response = await routeToCloud(cleanBody, env, rlHeaders, start)
       const latencyMs = Date.now() - start
       const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
       const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -180,7 +181,8 @@ export default {
     anonymized = true
     const messages = getMessages(body)
     const { messages: anonMessages, map } = anonymize(messages, nerEntities)
-    const anonBody = { ...(body as Record<string, unknown>), messages: anonMessages }
+    const { pii_strategy: _ps, ...bodyRest } = body as Record<string, unknown>
+    const anonBody = { ...bodyRest, messages: anonMessages }
 
     const response = await routeToCloudAnon(anonBody, env, rlHeaders, piiMatches, nerEntities, map, start)
     const latencyMs = Date.now() - start
