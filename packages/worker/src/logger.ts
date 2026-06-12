@@ -13,6 +13,7 @@ export interface LogEntry {
   statusCode: number
   piiStrategy?: 'anonymize' | 'edge'
   edgeModel?: string
+  colo?: string | null
 }
 
 export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
@@ -39,6 +40,7 @@ export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
         status_code: entry.statusCode,
         pii_strategy: entry.piiStrategy ?? 'anonymize',
         edge_model: entry.edgeModel ?? null,
+        colo: entry.colo ?? null,
       }),
     })
   } catch {

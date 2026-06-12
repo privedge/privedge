@@ -1,43 +1,47 @@
 import Privedge from '../packages/sdk/dist/index.mjs'
 
 const WORKER = 'https://privedge-worker.hberdn.workers.dev'
+const KEY_EDGE = 'pvdg_live_0489f281871f4b24b6c127b7d3fb0b4f'
 
-// ── Test 1: PII detected → anonymize → cloud (401 confirms it reached OpenAI) ──
-console.log('\n--- Test 1: PII detected → anonymize → route to cloud ---')
-const ai1 = new Privedge({ apiKey: 'no-key', workerUrl: WORKER, compliance: 'hipaa' })
+// ── Test 1: PII + edge strategy → CF Workers AI (no OpenAI call) ────────────
+console.log('\n--- Test 1: PII detected + edge strategy → edge inference ---')
+const ai1 = new Privedge({ apiKey: KEY_EDGE, workerUrl: WORKER })
 try {
-  await ai1.chat.completions.create({
+  const res = await ai1.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: 'El paciente con DNI 12345678Z necesita revision' }],
   })
+  console.log('edge inference: ✅ PASS — got response')
+  console.log('routed_to:', res.routed_to)
+  console.log('pii_matches:', res.pii_matches)
+  console.log('anonymized:', res.anonymized)
+  console.log('reply:', res.choices?.[0]?.message?.content?.slice(0, 120))
 } catch (err) {
-  const is401 = err.message.includes('401') || err.message.includes('invalid_api_key')
-  console.log('anonymize pipeline:', is401 ? '✅ PASS — reached OpenAI (401 = anonymized prompt sent)' : '❌ FAIL')
-  console.log('detail:', err.message.slice(0, 120))
+  const isOpenAI = err.message.includes('Incorrect API key') || err.message.includes('invalid_api_key')
+  if (isOpenAI) {
+    console.log('edge inference: ❌ FAIL — went to OpenAI instead of edge')
+  } else {
+    console.log('edge inference: ❌ FAIL —', err.message.slice(0, 120))
+  }
 }
 
-// ── Test 2: No compliance header → pass through untouched ───────────────────
-console.log('\n--- Test 2: No compliance header → cloud pass-through ---')
-const ai2 = new Privedge({ apiKey: 'no-key', workerUrl: WORKER })
+// ── Test 2: No PII + edge strategy → cloud passthrough ──────────────────────
+console.log('\n--- Test 2: No PII → cloud passthrough ---')
+const ai2 = new Privedge({ apiKey: KEY_EDGE, workerUrl: WORKER })
 try {
   await ai2.chat.completions.create({
     model: 'gpt-4',
     messages: [{ role: 'user', content: 'What is the capital of France?' }],
   })
+  console.log('no-pii path: ✅ PASS — got response')
 } catch (err) {
-  const is401 = err.message.includes('401') || err.message.includes('invalid_api_key')
-  console.log('pass-through:', is401 ? '✅ PASS — reached OpenAI (no compliance, no interception)' : '❌ FAIL')
-}
-
-// ── Test 3: No PII + compliance → cloud (no anon needed) ────────────────────
-console.log('\n--- Test 3: No PII + compliance → cloud (no anonymization needed) ---')
-const ai3 = new Privedge({ apiKey: 'no-key', workerUrl: WORKER, compliance: 'hipaa' })
-try {
-  await ai3.chat.completions.create({
-    model: 'gpt-4',
-    messages: [{ role: 'user', content: 'What is the capital of France?' }],
-  })
-} catch (err) {
-  const is401 = err.message.includes('401') || err.message.includes('invalid_api_key')
-  console.log('no-pii path:', is401 ? '✅ PASS — reached OpenAI directly (no PII detected)' : '❌ FAIL')
+  const is401Cloud = err.message.includes('Incorrect API key') || err.message.includes('invalid_api_key')
+  const is401Privedge = err.message.includes('Unauthorized — provide a valid')
+  if (is401Cloud) {
+    console.log('no-pii path: ✅ PASS — reached cloud (no PII, no edge needed)')
+  } else if (is401Privedge) {
+    console.log('no-pii path: ❌ FAIL — key not recognized')
+  } else {
+    console.log('no-pii path: ❌ FAIL —', err.message.slice(0, 120))
+  }
 }
