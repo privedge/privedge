@@ -51,6 +51,8 @@ export default {
     const piiStrategy = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge'
     const edgeModel   = keyData.edge_model ?? env.EDGE_MODEL ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
     const colo        = request.cf?.colo ?? null
+    const country     = request.cf?.country ?? null
+    const city        = (request.cf as { city?: string } | undefined)?.city ?? null
 
     const rl = await checkRateLimit(keyData.user_id, keyData.tier, env.PRIVEDGE_KEYS)
     const rlHeaders = {
@@ -120,6 +122,8 @@ export default {
         statusCode: response.status,
         piiStrategy,
         colo,
+        country,
+        city,
       }))
       return response
     }
@@ -159,6 +163,8 @@ export default {
         piiStrategy,
         edgeModel,
         colo,
+        country,
+        city,
       }))
       return response
     }
@@ -186,6 +192,8 @@ export default {
       statusCode: response.status,
       piiStrategy,
       colo,
+      country,
+      city,
     }))
 
     return response
