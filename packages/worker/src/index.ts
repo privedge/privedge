@@ -91,22 +91,19 @@ export default {
     let piiMatches = 0
     let anonymized = false
 
-    // Secret detection — add 'SECRET' to piiTypes if detected
+    // Secret detection — runs sync, no cost
     const secrets = detectSecrets(prompt)
 
-    // PII detection — regex first, NER if no match
-    const { detected: regexDetected, matches, types } = detectPII(prompt)
-    piiTypes = types
-    piiMatches = matches
-    let nerEntities: NerEntity[] = []
+    // PII detection — regex + NER in parallel, always
+    const [regexResult, nerResult] = await Promise.all([
+      Promise.resolve(detectPII(prompt)),
+      detectPIINER(prompt, env.AI),
+    ])
 
-    let detected = regexDetected
-    if (!detected) {
-      const ner = await detectPIINER(prompt, env.AI)
-      detected = ner.detected
-      nerEntities = ner.entities
-      if (detected) piiTypes = nerEntities.map(e => e.type)
-    }
+    const nerEntities: NerEntity[] = nerResult.entities
+    const detected = regexResult.detected || nerResult.detected
+    piiTypes = [...new Set([...regexResult.types, ...nerEntities.map(e => e.type)])]
+    piiMatches = regexResult.matches + nerEntities.length
 
     if (secrets.detected) piiTypes = [...piiTypes, 'SECRET']
 
