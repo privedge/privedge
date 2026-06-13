@@ -57,10 +57,10 @@ export function detectSecrets(text: string): { detected: boolean; types: string[
 }
 
 const nerPrompt = (text: string) =>
-  `Extract PII entities from the text below. Reply with ONLY a JSON object, nothing else.
-JSON format: {"entities":[{"type":"PERSON","value":"exact string from text"}]}
-Entity types to find: PERSON (full names), ORG (companies/hospitals/insurers), ADDRESS (street addresses)
-Only include values that appear VERBATIM in the text. If none found, return {"entities":[]}.
+  `List PII entities in this text. Reply with JSON only, no explanation.
+{"entities":[{"type":"PERSON","value":"exact name"},{"type":"ORG","value":"exact org"}]}
+Types: PERSON=full names, ORG=companies/hospitals/insurers, ADDRESS=street addresses
+Values must appear verbatim. Empty: {"entities":[]}
 Text: ${JSON.stringify(text)}`
 
 export async function detectPIINER(
@@ -68,23 +68,25 @@ export async function detectPIINER(
   ai: Ai,
 ): Promise<{ detected: boolean; entities: NerEntity[] }> {
   try {
-    const result = await (ai.run as Function)('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    const result = await (ai.run as Function)('@cf/meta/llama-3.1-8b-instruct', {
       messages: [
-        { role: 'system', content: 'You are a PII extractor. Always reply with valid JSON only.' },
+        { role: 'system', content: 'Reply with valid JSON only. No markdown, no explanation.' },
         { role: 'user', content: nerPrompt(text) },
       ],
-      max_tokens: 300,
+      max_tokens: 256,
     })
     const raw: string = (result as { response: string }).response?.trim() ?? ''
-    const match = raw.match(/\{[\s\S]*\}/)
+    const match = raw.match(/\{[^{}]*"entities"\s*:\s*\[[\s\S]*?\]\s*\}/)
+      ?? raw.match(/\{[\s\S]*\}/)
     if (!match) return { detected: false, entities: [] }
-    const parsed = JSON.parse(match[0]) as { detected?: boolean; entities?: unknown }
+    const parsed = JSON.parse(match[0]) as { entities?: unknown }
+    const lower = text.toLowerCase()
     const entities: NerEntity[] = Array.isArray(parsed.entities)
       ? (parsed.entities as NerEntity[]).filter(
-          e => e?.type && e?.value && text.includes(e.value),
+          e => e?.type && e?.value && lower.includes(e.value.toLowerCase()),
         )
       : []
-    return { detected: Boolean(parsed.detected) && entities.length > 0, entities }
+    return { detected: entities.length > 0, entities }
   } catch {
     return { detected: false, entities: [] }
   }
