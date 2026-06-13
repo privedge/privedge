@@ -7,11 +7,18 @@ AI inference proxy with two privacy modes: anonymize PII before sending to cloud
 ## How it works
 
 ```
-Your app → Privedge Worker → PII detected?
-                              ├── pii_strategy: 'anonymize' → redact PII → cloud API → re-inject → response
-                              └── pii_strategy: 'edge'      → CF AI edge model (data stays local)
-                            No PII → cloud API → response
+Your app → Privedge Worker (Cloudflare edge node)
+                │
+                ├── Regex detection (sync, local)
+                ├── NER detection   (Workers AI, same node) ← PII never leaves this node
+                │
+                ├── pii_strategy: 'anonymize' → redact PII → cloud API → re-inject → response
+                ├── pii_strategy: 'edge'      → CF AI edge model (full prompt stays local)
+                └── No PII detected           → cloud API → response
 ```
+
+**Why NER runs on Workers AI and not on the cloud API:**
+NER sees the original text before any anonymization — it must run on the same Cloudflare edge node as the request. Sending the raw prompt to OpenAI for entity detection would expose PII before it's redacted, defeating the purpose of the proxy.
 
 Drop-in replacement for the OpenAI SDK. One header change, full compliance.
 
@@ -55,13 +62,24 @@ The strategy is set via the `pii_strategy` field on the API key (passed to the W
 
 ## PII Detection
 
-Regex + NER-based detection for:
-- SSN, credit cards, IBAN
+Two layers run in parallel on every request:
+
+**Regex** (deterministic, zero latency):
+- SSN, credit cards, IBAN, routing numbers, tax IDs
 - Email addresses
-- Spanish DNI / NIE
-- Phone numbers
-- Medical keywords (`patient`, `diagnosis`, `historial`…)
-- Secret patterns (API keys, tokens, passwords)
+- Spanish DNI / NIE, passports
+- Phone numbers (US + ES formats)
+- Dates (MM/DD/YYYY, YYYY-MM-DD)
+- Medical IDs: MRN, employee IDs, generic reference numbers
+- Medical keywords (`patient`, `cardiologist`, `troponin`…)
+- Secret patterns (API keys, JWTs, DB connection strings)
+
+**NER** (Workers AI `llama-3.3-70b`, same edge node):
+- Person names
+- Organizations (hospitals, insurers, law firms)
+- Street addresses
+
+Both layers run with `Promise.all` — results are merged before anonymization. NER never calls an external API; it runs on the same Cloudflare node that received the request.
 
 ## Deploy
 
@@ -134,7 +152,7 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 - [x] Secret detection (API keys, tokens)
 - [x] Dual PII strategy (anonymize vs edge inference)
 - [x] Per-key edge model selection + edge rate limits
-- [ ] NER model for smarter PII detection
+- [x] NER model (Workers AI 70B, runs on-node — PII never leaves the edge)
 - [ ] Anthropic / Gemini support
 - [ ] SOC2 / HIPAA certification
 
