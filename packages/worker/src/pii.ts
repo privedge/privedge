@@ -1,11 +1,26 @@
 const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
-  { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,  type: 'EMAIL'  },
-  { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                  type: 'SSN'    },
-  { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,           type: 'CARD'   },
-  { pattern: /\b(\+?34|0034)?[\s-]?[6789]\d{8}\b/g,                     type: 'PHONE'  },
-  { pattern: /\b[0-9]{8}[A-Z]\b|\b[XYZ][0-9]{7}[A-Z]\b/g,             type: 'DNI'    },
-  { pattern: /\bES\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}[\s]?\d{10}\b/gi, type: 'IBAN'   },
-  { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical)\b/gi, type: 'MEDICAL_KW' },
+  // Identity
+  { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,        type: 'EMAIL'      },
+  { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                        type: 'SSN'        },
+  { pattern: /\b[0-9]{8}[A-Z]\b|\b[XYZ][0-9]{7}[A-Z]\b/g,                   type: 'DNI'        },
+  { pattern: /\b[A-Z]{1,3}\d{6,9}\b/g,                                        type: 'PASSPORT'   },
+  // Financial
+  { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
+  { pattern: /\b\d{9}\b(?=.*routing|\brouting\b.*\d{9})/gi,                   type: 'ROUTING'    },
+  { pattern: /\bES\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}[\s]?\d{10}\b/gi,      type: 'IBAN'       },
+  { pattern: /\b\d{2}-\d{7}\b/g,                                               type: 'TAX_ID'     },
+  // Phone — US + ES
+  { pattern: /\b(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,         type: 'PHONE'      },
+  { pattern: /\b(\+?34|0034)?[\s-]?[6789]\d{8}\b/g,                           type: 'PHONE'      },
+  // Date patterns
+  { pattern: /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,                               type: 'DATE'       },
+  { pattern: /\b\d{4}-\d{2}-\d{2}\b/g,                                        type: 'DATE'       },
+  // Medical / HR IDs
+  { pattern: /\bMRN[-\s]?\d{4,}\b/gi,                                          type: 'MRN'        },
+  { pattern: /\bEMP[-\s]?\d{4,}\b/gi,                                          type: 'EMP_ID'     },
+  { pattern: /\b(APP|BC|ID)[-#]?[A-Z0-9]{4,}\b/g,                            type: 'ID'         },
+  // Medical keywords
+  { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical|cardiologist|troponin|ECG)\b/gi, type: 'MEDICAL_KW' },
 ]
 
 const SECRET_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
@@ -42,21 +57,23 @@ export function detectSecrets(text: string): { detected: boolean; types: string[
 }
 
 const nerPrompt = (text: string) =>
-  `Detect PII in this text. Reply ONLY with valid JSON, no explanation.
-Format: {"detected":boolean,"entities":[{"type":"PERSON","value":"exact text found"}]}
-Types: PERSON (names/nombres), ADDRESS (addresses/direcciones), MEDICAL (conditions/diagnoses/condiciones/diagnósticos), ORG_SENSITIVE
-Rules: only include entities whose "value" appears verbatim in the text. ES+EN.
-Text: ${JSON.stringify(text)}
-JSON:`
+  `Extract PII entities from the text below. Reply with ONLY a JSON object, nothing else.
+JSON format: {"entities":[{"type":"PERSON","value":"exact string from text"}]}
+Entity types to find: PERSON (full names), ORG (companies/hospitals/insurers), ADDRESS (street addresses)
+Only include values that appear VERBATIM in the text. If none found, return {"entities":[]}.
+Text: ${JSON.stringify(text)}`
 
 export async function detectPIINER(
   text: string,
   ai: Ai,
 ): Promise<{ detected: boolean; entities: NerEntity[] }> {
   try {
-    const result = await (ai.run as Function)('@cf/meta/llama-3.2-3b-instruct', {
-      messages: [{ role: 'user', content: nerPrompt(text) }],
-      max_tokens: 150,
+    const result = await (ai.run as Function)('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+      messages: [
+        { role: 'system', content: 'You are a PII extractor. Always reply with valid JSON only.' },
+        { role: 'user', content: nerPrompt(text) },
+      ],
+      max_tokens: 300,
     })
     const raw: string = (result as { response: string }).response?.trim() ?? ''
     const match = raw.match(/\{[\s\S]*\}/)
