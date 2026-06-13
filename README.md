@@ -62,9 +62,14 @@ The strategy is set via the `pii_strategy` field on the API key (passed to the W
 
 ## PII Detection
 
-Two layers run in parallel on every request:
+Detection runs in two layers — which layers are active depends on your plan:
 
-**Regex** (deterministic, zero latency):
+| Layer | Free | Pro / Enterprise |
+|-------|------|-----------------|
+| Regex (deterministic) | ✅ | ✅ |
+| NER (Workers AI 70B) | — | ✅ |
+
+**Regex** (all tiers, deterministic, zero latency):
 - SSN, credit cards, IBAN, routing numbers, tax IDs
 - Email addresses
 - Spanish DNI / NIE, passports
@@ -74,12 +79,12 @@ Two layers run in parallel on every request:
 - Medical keywords (`patient`, `cardiologist`, `troponin`…)
 - Secret patterns (API keys, JWTs, DB connection strings)
 
-**NER** (Workers AI `llama-3.3-70b`, same edge node):
+**NER** (Pro / Enterprise — Workers AI `llama-3.3-70b`, same edge node):
 - Person names
 - Organizations (hospitals, insurers, law firms)
 - Street addresses
 
-Both layers run with `Promise.all` — results are merged before anonymization. NER never calls an external API; it runs on the same Cloudflare node that received the request.
+When NER is active, both layers run with `Promise.all` — results are merged before anonymization. NER never calls an external API; it runs on the same Cloudflare node that received the request.
 
 ## Deploy
 

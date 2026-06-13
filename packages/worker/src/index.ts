@@ -94,10 +94,11 @@ export default {
     // Secret detection — runs sync, no cost
     const secrets = detectSecrets(prompt)
 
-    // PII detection — regex + NER in parallel, always
+    // PII detection — regex always; NER only for Pro/Enterprise
+    const isPaidTier = keyData.tier === 'pro' || keyData.tier === 'enterprise'
     const [regexResult, nerResult] = await Promise.all([
       Promise.resolve(detectPII(prompt)),
-      detectPIINER(prompt, env.AI),
+      isPaidTier ? detectPIINER(prompt, env.AI) : Promise.resolve({ detected: false, entities: [] }),
     ])
 
     const nerEntities: NerEntity[] = nerResult.entities
