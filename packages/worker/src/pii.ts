@@ -68,18 +68,17 @@ export async function detectPIINER(
   ai: Ai,
 ): Promise<{ detected: boolean; entities: NerEntity[] }> {
   try {
-    const result = await (ai.run as Function)('@cf/meta/llama-3.1-8b-instruct', {
+    const result = await (ai.run as Function)('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
         { role: 'system', content: 'Reply with valid JSON only. No markdown, no explanation.' },
         { role: 'user', content: nerPrompt(text) },
       ],
       max_tokens: 256,
     })
-    const raw: string = (result as { response: string }).response?.trim() ?? ''
-    const match = raw.match(/\{[^{}]*"entities"\s*:\s*\[[\s\S]*?\]\s*\}/)
-      ?? raw.match(/\{[\s\S]*\}/)
-    if (!match) return { detected: false, entities: [] }
-    const parsed = JSON.parse(match[0]) as { entities?: unknown }
+    const resp = (result as { response: unknown }).response
+    const parsed = (typeof resp === 'string'
+      ? JSON.parse(resp.match(/\{[\s\S]*\}/)?.[0] ?? '{}')
+      : resp) as { entities?: unknown }
     const lower = text.toLowerCase()
     const entities: NerEntity[] = Array.isArray(parsed.entities)
       ? (parsed.entities as NerEntity[]).filter(
@@ -87,7 +86,8 @@ export async function detectPIINER(
         )
       : []
     return { detected: entities.length > 0, entities }
-  } catch {
+  } catch (e) {
+    console.log('[NER error]', String(e))
     return { detected: false, entities: [] }
   }
 }
