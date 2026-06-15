@@ -86,6 +86,33 @@ Detection runs in two layers — which layers are active depends on your plan:
 
 When NER is active, both layers run with `Promise.all` — results are merged before anonymization. NER never calls an external API; it runs on the same Cloudflare node that received the request.
 
+## Testing
+
+Unit tests cover the privacy-critical core — PII detection and the
+`anonymize → de-anonymize` round-trip. They run on Node's built-in test runner
+with type stripping, so there are **no test dependencies to install**.
+
+**Requires Node 22.6+** (for `--experimental-strip-types`).
+
+```bash
+# all packages, from the repo root
+pnpm test
+
+# only the worker
+pnpm --filter worker test
+
+# or run the test files directly
+cd packages/worker
+node --experimental-strip-types --test test/*.test.ts
+```
+
+What's covered (`packages/worker/test/pii.test.ts`):
+
+- **No leak** — after `anonymize`, the original PII and secrets never appear in the outgoing text
+- **Round-trip integrity** — `deanonymize(anonymize(x)) === x`, including many tokens of the same type and NER entities
+- **Detection** — `detectPII` / `detectSecrets` per type, plus clean-text negatives
+- **Malformed input** — untrusted request bodies are handled without throwing
+
 ## Deploy
 
 ### Prerequisites
@@ -158,6 +185,7 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 - [x] Dual PII strategy (anonymize vs edge inference)
 - [x] Per-key edge model selection + edge rate limits
 - [x] NER model (Workers AI 70B, runs on-node — PII never leaves the edge)
+- [x] Unit tests — PII detection + anonymize/de-anonymize round-trip
 - [ ] Anthropic / Gemini support
 - [ ] SOC2 / HIPAA certification
 
