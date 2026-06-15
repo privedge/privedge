@@ -18,6 +18,11 @@ export interface LogEntry {
   requestCity?: string | null
 }
 
+/**
+ * Fire-and-forget POST to the developer's configured Supabase instance.
+ * Always called via ctx.waitUntil() so it never delays the proxied response.
+ * Errors are swallowed — log failures must never block or alter the response.
+ */
 export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
   try {
     await fetch(`${env.SUPABASE_URL}/rest/v1/request_logs`, {

@@ -30,6 +30,7 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
+/** Builds a JSON error response with CORS headers. */
 function authError(message: string, status: number, extra?: Record<string, unknown>): Response {
   return Response.json({ error: message, ...extra }, { status, headers: CORS })
 }
@@ -207,6 +208,11 @@ export default {
   },
 }
 
+/**
+ * Routes the request to Workers AI (edge inference) without anonymization.
+ * PII never leaves the Cloudflare network — the LLM runs on the same edge node.
+ * Returns an OpenAI-compatible chat completion response.
+ */
 async function routeToEdge(
   body: unknown,
   env: Env,
@@ -247,6 +253,10 @@ async function routeToEdge(
   )
 }
 
+/**
+ * Sends the already-anonymized request to the cloud LLM, then restores original values
+ * in every choice message before returning. The cloud provider never sees raw PII.
+ */
 async function routeToCloudAnon(
   anonBody: unknown,
   env: Env,
@@ -292,6 +302,7 @@ async function routeToCloudAnon(
   )
 }
 
+/** Pass-through to the cloud LLM. Only called when no PII or secrets were detected, so no anonymization needed. */
 async function routeToCloud(
   body: unknown,
   env: Env,

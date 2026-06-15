@@ -20,6 +20,7 @@ export interface RateLimitResult {
   reset: string
 }
 
+/** Daily request counter per user, keyed by `rl:{userId}:{date}` in KV. TTL is 86400s so stale keys auto-expire without manual cleanup. */
 export async function checkRateLimit(
   userId: string,
   tier: string,
@@ -41,6 +42,11 @@ export async function checkRateLimit(
   return { allowed: true, limit, remaining: limit - current - 1, reset }
 }
 
+/**
+ * Separate daily counter for edge inference (Workers AI), keyed by `rl:edge:{userId}:{date}`.
+ * Independent of the total request quota — edge calls are more expensive and need their own ceiling.
+ * Per-key override via `edge_limit`; falls back to tier default.
+ */
 export async function checkEdgeRateLimit(
   env: { PRIVEDGE_KEYS: KVNamespace },
   keyData: KeyData,

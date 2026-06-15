@@ -9,6 +9,7 @@ export interface KeyData {
   allow_strategy_override?: boolean  // demo keys only — allows pii_strategy in request body
 }
 
+/** Validates the `Authorization: Bearer pvdg_live_*` header against the KV store. Returns null if missing, malformed, or not found. */
 export async function validateKey(
   request: Request,
   kv: KVNamespace,

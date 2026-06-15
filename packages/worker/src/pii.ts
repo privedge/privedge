@@ -37,6 +37,7 @@ export type NerEntity = { type: string; value: string }
 
 // ── Detection ──────────────────────────────────────────────────────────────
 
+/** Scans text with regex patterns. Returns detected PII types (one entry per type, not per individual match). */
 export function detectPII(text: string): { detected: boolean; matches: number; types: string[] } {
   const types: string[] = []
   for (const { pattern, type } of PII_PATTERNS) {
@@ -46,6 +47,7 @@ export function detectPII(text: string): { detected: boolean; matches: number; t
   return { detected: types.length > 0, matches: types.length, types }
 }
 
+/** Scans for hardcoded secrets (API keys, DB URIs, JWTs). Runs before PII patterns inside anonymize() because secrets are longer and more specific — processing them first avoids partial overlaps. */
 export function detectSecrets(text: string): { detected: boolean; types: string[] } {
   const seen = new Set<string>()
   for (const { pattern, type } of SECRET_PATTERNS) {
@@ -63,6 +65,11 @@ Types: PERSON=full names, ORG=companies/hospitals/insurers, ADDRESS=street addre
 Values must appear verbatim. Empty: {"entities":[]}
 Text: ${JSON.stringify(text)}`
 
+/**
+ * Calls Workers AI (LLaMA) for named entity recognition (PERSON, ORG, ADDRESS).
+ * Only invoked for Pro/Enterprise tiers. Falls back to empty on any LLM or parse error
+ * to avoid blocking the request — NER is best-effort, regex is the safety net.
+ */
 export async function detectPIINER(
   text: string,
   ai: Ai,
@@ -96,6 +103,11 @@ export async function detectPIINER(
 
 export type AnonMap = Record<string, string>
 
+/**
+ * Replaces PII and secret matches with typed tokens (e.g. `<EMAIL_1>`) and returns a
+ * reverse map for deanonymize(). Order matters: secrets run first, then regex PII, then
+ * NER entities — each pass operates on the already-substituted text to prevent double-replacement.
+ */
 export function anonymize(
   messages: Array<{ role: string; content: string }>,
   nerEntities: NerEntity[],
@@ -150,6 +162,7 @@ export function anonymize(
 
 // ── De-anonymization ───────────────────────────────────────────────────────
 
+/** Restores original values in the LLM response using the token map produced by anonymize(). */
 export function deanonymize(text: string, map: AnonMap): string {
   let result = text
   for (const [t, value] of Object.entries(map)) {
@@ -160,6 +173,7 @@ export function deanonymize(text: string, map: AnonMap): string {
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 
+/** Flattens all message content into a single string for scanning. Used only for detection — anonymize() operates on the structured messages array directly. */
 export function extractMessages(body: unknown): string {
   if (!body || typeof body !== 'object') return ''
   const b = body as Record<string, unknown>
@@ -169,6 +183,7 @@ export function extractMessages(body: unknown): string {
     .join(' ')
 }
 
+/** Extracts the messages array from the request body for anonymize(). Separate from extractMessages() to preserve structure. */
 export function getMessages(body: unknown): Array<{ role: string; content: string }> {
   if (!body || typeof body !== 'object') return []
   const b = body as Record<string, unknown>
