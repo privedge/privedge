@@ -1,6 +1,6 @@
 import Privedge from '../packages/sdk/dist/index.mjs'
 
-const WORKER = 'https://privedge-worker.hberdn.workers.dev'
+const WORKER = 'https://edge.privedge.io'
 const KEY_EDGE = 'pvdg_live_0489f281871f4b24b6c127b7d3fb0b4f'
 
 // ── Test 1: PII + edge strategy → CF Workers AI (no OpenAI call) ────────────
