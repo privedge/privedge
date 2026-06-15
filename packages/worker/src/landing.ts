@@ -1,4 +1,9 @@
-export const LANDING_HTML = `<!DOCTYPE html>
+export function getLandingHTML(healthy: boolean): string {
+  const badge = healthy
+    ? `<div class="status status-ok"><span class="dot"></span>Edge functions ready</div>`
+    : `<div class="status status-err"><span class="dot-err"></span>We're working on it — please try again in a few minutes.</div>`
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -42,16 +47,17 @@ export const LANDING_HTML = `<!DOCTYPE html>
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 28px;
+      gap: 24px;
+      margin-bottom: 18vh;
     }
     .brand-row {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
     }
     .brand-mark { width: 56px; height: 74px; flex-shrink: 0; }
     .brand-name {
-      font-size: 80px;
+      font-size: 64px;
       font-weight: 800;
       letter-spacing: -0.045em;
       color: var(--ink);
@@ -62,15 +68,25 @@ export const LANDING_HTML = `<!DOCTYPE html>
       align-items: center;
       gap: 8px;
       padding: 6px 16px;
-      background: rgba(16,185,129,0.07);
-      border: 1px solid rgba(16,185,129,0.22);
       border-radius: 99px;
       font-family: var(--mono);
       font-size: 11.5px;
       font-weight: 500;
-      letter-spacing: 0.07em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
+    }
+    .status-ok {
+      background: rgba(16,185,129,0.07);
+      border: 1px solid rgba(16,185,129,0.22);
       color: var(--edge-ink);
+    }
+    .status-err {
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.22);
+      color: #b91c1c;
+      text-transform: none;
+      letter-spacing: 0.01em;
+      font-size: 12px;
     }
     .dot {
       width: 7px; height: 7px;
@@ -78,6 +94,13 @@ export const LANDING_HTML = `<!DOCTYPE html>
       background: var(--edge);
       flex-shrink: 0;
       animation: pulse 1.6s ease-in-out infinite;
+    }
+    .dot-err {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #ef4444;
+      flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
     }
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
@@ -112,7 +135,7 @@ export const LANDING_HTML = `<!DOCTYPE html>
       <span class="brand-name">Privedge</span>
     </div>
 
-    <div class="status"><span class="dot"></span>Edge functions ready</div>
+    ${badge}
 
     <a class="link" href="https://privedge.io" target="_blank" rel="noopener noreferrer">
       privedge.io
@@ -124,3 +147,4 @@ export const LANDING_HTML = `<!DOCTYPE html>
   </div>
 </body>
 </html>`
+}

@@ -1,4 +1,4 @@
-import { LANDING_HTML } from './landing'
+import { getLandingHTML } from './landing'
 import {
   detectPII,
   detectSecrets,
@@ -42,7 +42,13 @@ export default {
       return new Response(null, { headers: CORS })
     }
     if (request.method === 'GET' && new URL(request.url).pathname === '/') {
-      return new Response(LANDING_HTML, { status: 200, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } })
+      let healthy = false
+      try {
+        await env.PRIVEDGE_KEYS.get('__health__')
+        healthy = !!env.AI
+      } catch { /* KV unreachable — unhealthy */ }
+      const status = healthy ? 200 : 503
+      return new Response(getLandingHTML(healthy), { status, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } })
     }
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
