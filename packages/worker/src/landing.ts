@@ -23,7 +23,10 @@ export function getLandingHTML(healthy: boolean): string {
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #fff;
+      background:
+        radial-gradient(circle at 20% 0%, #d1fae5 0%, transparent 45%),
+        radial-gradient(circle at 100% 100%, #dbeafe 0%, transparent 40%),
+        #f7f7f9;
       color: var(--ink);
       font-family: var(--sans);
       min-height: 100vh;
@@ -37,8 +40,9 @@ export function getLandingHTML(healthy: boolean): string {
       content: '';
       position: fixed;
       inset: 0;
-      background-image: radial-gradient(circle, rgba(13,16,48,0.05) 1px, transparent 1px);
-      background-size: 28px 28px;
+      background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity: 0.4;
       pointer-events: none;
     }
     .page {
