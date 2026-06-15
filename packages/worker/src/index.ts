@@ -1,3 +1,4 @@
+import { LANDING_HTML } from './landing'
 import {
   detectPII,
   detectSecrets,
@@ -41,10 +42,7 @@ export default {
       return new Response(null, { headers: CORS })
     }
     if (request.method === 'GET' && new URL(request.url).pathname === '/') {
-      return new Response(
-        `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privedge Edge</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0f;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh}.card{text-align:center;padding:48px 40px}.shield{width:64px;height:64px;margin:0 auto 24px;display:block}.name{font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#fff}.badge{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:4px 12px;background:#0f2;color:#000;border-radius:99px;font-size:12px;font-weight:600;letter-spacing:.5px}.dot{width:6px;height:6px;background:#000;border-radius:50%;animation:pulse 1.5s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.sub{margin-top:16px;color:#64748b;font-size:14px}</style></head><body><div class="card"><svg class="shield" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4L8 14v18c0 14 10.7 26.4 24 29 13.3-2.6 24-15 24-29V14L32 4z" fill="#00ff44" fill-opacity=".12" stroke="#00ff44" stroke-width="1.5"/><path d="M22 32l7 7 13-13" stroke="#00ff44" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="name">Privedge</div><span class="badge"><span class="dot"></span>Edge functions ready</span><p class="sub">Privacy-first AI proxy · edge.privedge.io</p></div></body></html>`,
-        { status: 200, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } }
-      )
+      return new Response(LANDING_HTML, { status: 200, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } })
     }
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
