@@ -25,7 +25,7 @@ export function getLandingHTML(healthy: boolean): string {
     body {
       background:
         radial-gradient(circle at 20% 0%, #d1fae5 0%, transparent 45%),
-        radial-gradient(circle at 100% 100%, #dbeafe 0%, transparent 40%),
+        radial-gradient(circle at 100% 100%, #d1fae5 0%, transparent 40%),
         #f7f7f9;
       color: var(--ink);
       font-family: var(--sans);
