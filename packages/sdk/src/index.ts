@@ -14,6 +14,12 @@ export interface ChatCompletionParams {
   temperature?: number
   max_tokens?: number
   stream?: boolean
+  /**
+   * Per-request routing strategy. Only honored when the API key is configured as `custom`
+   * (defaults to `anonymize` if omitted). Keys fixed to `edge`/`anonymize` reject a conflicting
+   * value with a 400 `strategy_mismatch` error.
+   */
+  pii_strategy?: 'edge' | 'anonymize'
 }
 
 export interface ChatCompletionResponse {

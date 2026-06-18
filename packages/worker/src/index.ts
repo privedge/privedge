@@ -31,6 +31,12 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
+/** Strategy info echoed back in every successful response so clients (and the demo) can show what ran. */
+interface StrategyMeta {
+  applied_strategy: 'anonymize' | 'edge'        // what actually ran for this request
+  strategy_mode: 'anonymize' | 'edge' | 'custom' // the key's configured mode
+}
+
 /** Builds a JSON error response with CORS headers. */
 function authError(message: string, status: number, extra?: Record<string, unknown>): Response {
   return Response.json({ error: message, ...extra }, { status, headers: CORS })
@@ -87,12 +93,26 @@ export default {
       return new Response('Invalid JSON', { status: 400 })
     }
 
-    const baseStrategy = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge'
-    const bodyStrategy = (body as Record<string, unknown>)?.pii_strategy
+    // Strategy mode of the key: 'edge'/'anonymize' are fixed; 'custom' lets the caller pick per request.
+    const mode = (keyData.pii_strategy ?? env.PII_STRATEGY ?? 'anonymize') as 'anonymize' | 'edge' | 'custom'
+    const bodyStrategy = (body as Record<string, unknown>)?.pii_strategy as 'anonymize' | 'edge' | undefined
+
+    // Fail-loud: an explicit body strategy that contradicts a fixed key is a config error, not a silent override.
+    if (mode !== 'custom' && bodyStrategy && bodyStrategy !== mode) {
+      return authError(
+        `Invalid pii_strategy '${bodyStrategy}' for the provided API key (configured as '${mode}'). ` +
+        `Check your API key configuration in the dashboard.`,
+        400,
+        { code: 'strategy_mismatch', configured: mode },
+      )
+    }
+
+    // Effective strategy actually applied to this request.
     const piiStrategy: 'anonymize' | 'edge' =
-      bodyStrategy && keyData.allow_strategy_override === true
-        ? (bodyStrategy as 'anonymize' | 'edge')
-        : baseStrategy
+      mode === 'custom'
+        ? (bodyStrategy === 'edge' || bodyStrategy === 'anonymize' ? bodyStrategy : 'anonymize')
+        : mode
+    const strategyMeta: StrategyMeta = { applied_strategy: piiStrategy, strategy_mode: mode }
 
     const start = Date.now()
     const prompt = extractMessages(body)
@@ -123,7 +143,7 @@ export default {
 
     if (!hasAnything) {
       const { pii_strategy: _ps2, ...cleanBody } = body as Record<string, unknown>
-      const response = await routeToCloud(cleanBody, env, rlHeaders, start)
+      const response = await routeToCloud(cleanBody, env, rlHeaders, start, strategyMeta)
       const latencyMs = Date.now() - start
       const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
       const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -165,7 +185,7 @@ export default {
         ...rlHeaders,
         'X-Edge-Limit': String(edgeRl.limit),
         'X-Edge-Remaining': String(edgeRl.remaining),
-      }, piiMatches, nerEntities, start, edgeModel)
+      }, piiMatches, nerEntities, start, edgeModel, strategyMeta)
       const latencyMs = Date.now() - start
       ctx.waitUntil(writeLog(env, {
         keyData,
@@ -193,7 +213,7 @@ export default {
     const { pii_strategy: _ps, ...bodyRest } = body as Record<string, unknown>
     const anonBody = { ...bodyRest, messages: anonMessages }
 
-    const response = await routeToCloudAnon(anonBody, env, rlHeaders, piiMatches, nerEntities, map, start)
+    const response = await routeToCloudAnon(anonBody, env, rlHeaders, piiMatches, nerEntities, map, start, strategyMeta)
     const latencyMs = Date.now() - start
     const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
     const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -231,6 +251,7 @@ async function routeToEdge(
   nerEntities: NerEntity[],
   start: number,
   model: string,
+  meta: StrategyMeta,
 ): Promise<Response> {
   const b = body as Record<string, unknown>
   const messages = b.messages as Array<{ role: string; content: string }>
@@ -258,6 +279,8 @@ async function routeToEdge(
       pii_matches: piiMatches,
       ner_entities: nerEntities.map((e: NerEntity) => e.type),
       latency_ms: Date.now() - start,
+      applied_strategy: meta.applied_strategy,
+      strategy_mode: meta.strategy_mode,
     },
     { headers: extraHeaders },
   )
@@ -275,6 +298,7 @@ async function routeToCloudAnon(
   nerEntities: NerEntity[],
   map: AnonMap,
   start: number,
+  meta: StrategyMeta,
 ): Promise<Response> {
   const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
     method: 'POST',
@@ -307,6 +331,8 @@ async function routeToCloudAnon(
       pii_matches: piiMatches,
       ner_entities: nerEntities.map(e => e.type),
       latency_ms: Date.now() - start,
+      applied_strategy: meta.applied_strategy,
+      strategy_mode: meta.strategy_mode,
     },
     { status: response.status, headers: extraHeaders },
   )
@@ -318,6 +344,7 @@ async function routeToCloud(
   env: Env,
   extraHeaders: Record<string, string>,
   start: number,
+  meta: StrategyMeta,
 ): Promise<Response> {
   const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
     method: 'POST',
@@ -337,6 +364,8 @@ async function routeToCloud(
       pii_matches: 0,
       ner_entities: [],
       latency_ms: Date.now() - start,
+      applied_strategy: meta.applied_strategy,
+      strategy_mode: meta.strategy_mode,
     },
     { status: response.status, headers: extraHeaders },
   )

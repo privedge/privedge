@@ -3,10 +3,9 @@ export interface KeyData {
   tier: string
   api_key_id: string
   api_key_name: string
-  pii_strategy: 'anonymize' | 'edge'
+  pii_strategy: 'anonymize' | 'edge' | 'custom'  // 'custom' = caller picks per request (body)
   edge_model: string           // Workers AI model for edge inference
   edge_limit: number | null    // null = use tier default
-  allow_strategy_override?: boolean  // demo keys only — allows pii_strategy in request body
 }
 
 /** Validates the `Authorization: Bearer pvdg_live_*` header against the KV store. Returns null if missing, malformed, or not found. */
