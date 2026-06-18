@@ -2,12 +2,12 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // Identity
   { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,        type: 'EMAIL'      },
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                        type: 'SSN'        },
-  { pattern: /\b[0-9]{8}[A-Z]\b|\b[XYZ][0-9]{7}[A-Z]\b/g,                   type: 'DNI'        },
+  { pattern: /\b[0-9]{8}[-\s]?[A-Z]\b|\b[XYZ][0-9]{7}[-\s]?[A-Z]\b/g,      type: 'DNI'        },
   { pattern: /\b[A-Z]{1,3}\d{6,9}\b/g,                                        type: 'PASSPORT'   },
-  // Financial
+  // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs
+  { pattern: /\b[A-Z]{2}\d{2}(?:[\s]?[A-Z0-9]{4}){3,7}\b/g,                 type: 'IBAN'       },
   { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
   { pattern: /\b\d{9}\b(?=.*routing|\brouting\b.*\d{9})/gi,                   type: 'ROUTING'    },
-  { pattern: /\bES\d{2}[\s]?\d{4}[\s]?\d{4}[\s]?\d{2}[\s]?\d{10}\b/gi,      type: 'IBAN'       },
   { pattern: /\b\d{2}-\d{7}\b/g,                                               type: 'TAX_ID'     },
   // Phone — US + ES
   { pattern: /\b(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,         type: 'PHONE'      },
