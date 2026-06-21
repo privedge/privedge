@@ -10,13 +10,21 @@ binding = "PRIVEDGE_KEYS"
 id = "5adc9737ef5a4978a380e024d374fef3"
 
 [vars]
-OPENAI_BASE_URL = "https://api.openai.com"
+OPENAI_BASE_URL = "https://api.openai.com"                 # legacy/self-host fallback when AI Gateway is unset
 PII_STRATEGY = "anonymize"                                 # "anonymize" | "edge" — self-host override
 EDGE_MODEL   = "@cf/meta/llama-3.3-70b-instruct-fp8-fast" # Workers AI model for edge inference
+CF_ACCOUNT_ID     = ""                                     # AI Gateway account id
+CF_AIG_GATEWAY_ID = "privedge"                             # AI Gateway gateway slug
 
 # Secrets (set via: wrangler secret put <NAME>)
-# WEBHOOK_SECRET       → Stripe webhook signing secret
-# RESEND_API_KEY       → Resend transactional email
-# SUPABASE_SERVICE_KEY → Supabase service role key
-# SUPABASE_URL         → Supabase project URL
-# CLOUD_API_KEY        → Default LLM provider key
+# WEBHOOK_SECRET         → Stripe webhook signing secret
+# RESEND_API_KEY         → Resend transactional email
+# SUPABASE_SERVICE_KEY   → Supabase service role key
+# SUPABASE_URL           → Supabase project URL
+# CLOUD_API_KEY          → Legacy/self-host LLM provider key (fallback when AI Gateway is unset)
+# CF_AIG_TOKEN           → AI Gateway authorization token (cf-aig-authorization)
+# PROVIDER_KEY_OPENAI    → Managed-mode OpenAI key (Privedge's own)
+# PROVIDER_KEY_ANTHROPIC → Managed-mode Anthropic key
+# PROVIDER_KEY_GOOGLE    → Managed-mode Google AI Studio key
+# PROVIDER_KEY_DEEPSEEK  → Managed-mode DeepSeek key
+# PROVIDER_KEY_MISTRAL   → Managed-mode Mistral key

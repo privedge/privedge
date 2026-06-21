@@ -13,6 +13,9 @@ export interface LogEntry {
   statusCode: number
   piiStrategy?: 'anonymize' | 'edge'
   edgeModel?: string
+  provider?: string         // cloud provider used for egress (managed/byok cloud paths)
+  cloudModel?: string       // cloud model id sent to the provider
+  providerMode?: string     // 'managed' | 'byok'
   cfNode?: string | null
   requestCountry?: string | null
   requestCity?: string | null
@@ -47,6 +50,9 @@ export async function writeLog(env: Env, entry: LogEntry): Promise<void> {
         status_code: entry.statusCode,
         pii_strategy: entry.piiStrategy ?? 'anonymize',
         edge_model: entry.edgeModel ?? null,
+        provider_mode: entry.providerMode ?? null,
+        provider: entry.provider ?? null,
+        cloud_model: entry.cloudModel ?? null,
         cf_node: entry.cfNode ?? null,
         request_country: entry.requestCountry ?? null,
         request_city: entry.requestCity ?? null,

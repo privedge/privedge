@@ -10,14 +10,25 @@ import {
   type AnonMap,
   type NerEntity,
 } from './pii'
-import { validateKey } from './auth'
+import { validateKey, type KeyData } from './auth'
 import { checkRateLimit, checkEdgeRateLimit } from './ratelimit'
 import { writeLog } from './logger'
 
 export interface Env {
   AI: Ai
-  OPENAI_BASE_URL: string
-  CLOUD_API_KEY: string
+  // Cloud egress is routed through Cloudflare AI Gateway's OpenAI-compatible endpoint.
+  CF_ACCOUNT_ID: string       // AI Gateway account id
+  CF_AIG_GATEWAY_ID: string   // AI Gateway gateway id (slug)
+  CF_AIG_TOKEN: string        // gateway authorization token (cf-aig-authorization)
+  // Managed-mode provider keys (Privedge's own). One per provider; selected per key.
+  PROVIDER_KEY_OPENAI?: string
+  PROVIDER_KEY_ANTHROPIC?: string
+  PROVIDER_KEY_GOOGLE?: string
+  PROVIDER_KEY_DEEPSEEK?: string
+  PROVIDER_KEY_MISTRAL?: string
+  // Legacy single-secret egress — kept as a managed/OpenAI fallback during migration.
+  OPENAI_BASE_URL?: string
+  CLOUD_API_KEY?: string
   PRIVEDGE_KEYS: KVNamespace
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string
@@ -143,7 +154,7 @@ export default {
 
     if (!hasAnything) {
       const { pii_strategy: _ps2, ...cleanBody } = body as Record<string, unknown>
-      const response = await routeToCloud(cleanBody, env, rlHeaders, start, strategyMeta)
+      const response = await routeToCloud(cleanBody, env, keyData, rlHeaders, start, strategyMeta)
       const latencyMs = Date.now() - start
       const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
       const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -158,6 +169,9 @@ export default {
         latencyMs,
         statusCode: response.status,
         piiStrategy,
+        providerMode: keyData.provider_mode ?? 'managed',
+        provider: keyData.provider ?? 'openai',
+        cloudModel: (cleanBody.model as string | undefined) ?? keyData.cloud_model,
         cfNode,
         requestCountry,
         requestCity,
@@ -213,7 +227,7 @@ export default {
     const { pii_strategy: _ps, ...bodyRest } = body as Record<string, unknown>
     const anonBody = { ...bodyRest, messages: anonMessages }
 
-    const response = await routeToCloudAnon(anonBody, env, rlHeaders, piiMatches, nerEntities, map, start, strategyMeta)
+    const response = await routeToCloudAnon(anonBody, env, keyData, rlHeaders, piiMatches, nerEntities, map, start, strategyMeta)
     const latencyMs = Date.now() - start
     const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
     const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -229,6 +243,9 @@ export default {
       latencyMs,
       statusCode: response.status,
       piiStrategy,
+      providerMode: keyData.provider_mode ?? 'managed',
+      provider: keyData.provider ?? 'openai',
+      cloudModel: ((anonBody as Record<string, unknown>).model as string | undefined) ?? keyData.cloud_model,
       cfNode,
       requestCountry,
       requestCity,
@@ -236,6 +253,71 @@ export default {
 
     return response
   },
+}
+
+interface CloudRequest {
+  url: string
+  headers: Record<string, string>
+  modelPrefix: string   // '' when talking to a provider directly (legacy/self-host)
+}
+
+/** Selects Privedge's own (managed-mode) provider key for the given provider. */
+function pickManagedKey(env: Env, provider: string): string | undefined {
+  switch (provider) {
+    case 'anthropic': return env.PROVIDER_KEY_ANTHROPIC
+    case 'google':    return env.PROVIDER_KEY_GOOGLE
+    case 'deepseek':  return env.PROVIDER_KEY_DEEPSEEK
+    case 'mistral':   return env.PROVIDER_KEY_MISTRAL
+    case 'openai':
+    default:          return env.PROVIDER_KEY_OPENAI ?? env.CLOUD_API_KEY
+  }
+}
+
+/**
+ * Builds the cloud egress target (URL + headers + model prefix) for a key.
+ * - With AI Gateway configured: routes through the OpenAI-compatible `/compat` endpoint.
+ *   BYOK → the gateway injects the customer's stored key by alias (we send no provider
+ *   Authorization). Managed → we send Privedge's own provider key.
+ * - Without AI Gateway (self-host / pre-migration): falls back to a direct
+ *   OpenAI-compatible endpoint with the single shared CLOUD_API_KEY, no model prefix.
+ */
+function buildCloudRequest(env: Env, keyData: KeyData): CloudRequest {
+  const provider = keyData.provider ?? 'openai'
+  const mode = keyData.provider_mode ?? 'managed'
+  const gatewayConfigured = !!(env.CF_ACCOUNT_ID && env.CF_AIG_GATEWAY_ID && env.CF_AIG_TOKEN)
+
+  if (!gatewayConfigured) {
+    return {
+      url: `${env.OPENAI_BASE_URL ?? 'https://api.openai.com'}/v1/chat/completions`,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(env.CLOUD_API_KEY ? { Authorization: `Bearer ${env.CLOUD_API_KEY}` } : {}),
+      },
+      modelPrefix: '',
+    }
+  }
+
+  const url = `https://gateway.ai.cloudflare.com/v1/${env.CF_ACCOUNT_ID}/${env.CF_AIG_GATEWAY_ID}/compat/chat/completions`
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'cf-aig-authorization': `Bearer ${env.CF_AIG_TOKEN}`,
+  }
+  if (mode === 'byok') {
+    // Customer key lives in CF Secrets Store; never send a provider Authorization header.
+    headers['cf-aig-byok-alias'] = keyData.byok_alias ?? keyData.api_key_id
+  } else {
+    const key = pickManagedKey(env, provider)
+    if (key) headers.Authorization = `Bearer ${key}`
+  }
+  return { url, headers, modelPrefix: provider }
+}
+
+/** Prefixes the body's `model` for the AI Gateway compat endpoint (e.g. `anthropic/claude-…`). No-op if empty prefix or already prefixed. */
+function applyModelPrefix(body: Record<string, unknown>, prefix: string): Record<string, unknown> {
+  if (!prefix) return body
+  const model = body.model
+  if (typeof model !== 'string' || model.includes('/')) return body
+  return { ...body, model: `${prefix}/${model}` }
 }
 
 /**
@@ -293,6 +375,7 @@ async function routeToEdge(
 async function routeToCloudAnon(
   anonBody: unknown,
   env: Env,
+  keyData: KeyData,
   extraHeaders: Record<string, string>,
   piiMatches: number,
   nerEntities: NerEntity[],
@@ -300,13 +383,12 @@ async function routeToCloudAnon(
   start: number,
   meta: StrategyMeta,
 ): Promise<Response> {
-  const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
+  const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
+  const outBody = applyModelPrefix(anonBody as Record<string, unknown>, modelPrefix)
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.CLOUD_API_KEY}`,
-    },
-    body: JSON.stringify(anonBody),
+    headers,
+    body: JSON.stringify(outBody),
   })
 
   if (!response.ok) {
@@ -342,17 +424,17 @@ async function routeToCloudAnon(
 async function routeToCloud(
   body: unknown,
   env: Env,
+  keyData: KeyData,
   extraHeaders: Record<string, string>,
   start: number,
   meta: StrategyMeta,
 ): Promise<Response> {
-  const response = await fetch(`${env.OPENAI_BASE_URL}/v1/chat/completions`, {
+  const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
+  const outBody = applyModelPrefix(body as Record<string, unknown>, modelPrefix)
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.CLOUD_API_KEY}`,
-    },
-    body: JSON.stringify(body),
+    headers,
+    body: JSON.stringify(outBody),
   })
 
   const data = (await response.json()) as Record<string, unknown>
