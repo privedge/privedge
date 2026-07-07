@@ -38,7 +38,7 @@ export interface Env {
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
@@ -67,6 +67,19 @@ export default {
       const status = healthy ? 200 : 503
       return new Response(getLandingHTML(healthy), { status, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } })
     }
+    if (request.method === 'GET' && new URL(request.url).pathname === '/v1/keys/info') {
+      const keyData = await validateKey(request, env.PRIVEDGE_KEYS)
+      if (!keyData) return authError('Unauthorized — provide a valid Privedge API key', 401)
+      return Response.json(
+        {
+          provider: keyData.provider ?? 'openai',
+          provider_mode: keyData.provider_mode ?? 'managed',
+          cloud_model: keyData.cloud_model ?? null,
+        },
+        { headers: CORS },
+      )
+    }
+
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 })
     }
