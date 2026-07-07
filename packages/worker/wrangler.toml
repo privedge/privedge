@@ -13,7 +13,7 @@ id = "5adc9737ef5a4978a380e024d374fef3"
 OPENAI_BASE_URL = "https://api.openai.com"                 # legacy/self-host fallback when AI Gateway is unset
 PII_STRATEGY = "anonymize"                                 # "anonymize" | "edge" — self-host override
 EDGE_MODEL   = "@cf/meta/llama-3.3-70b-instruct-fp8-fast" # Workers AI model for edge inference
-CF_ACCOUNT_ID     = ""                                     # AI Gateway account id
+CF_ACCOUNT_ID     = "be8b0bb801637b8d0d45d411d42f1881"    # AI Gateway account id
 CF_AIG_GATEWAY_ID = "privedge"                             # AI Gateway gateway slug
 
 # Secrets (set via: wrangler secret put <NAME>)
