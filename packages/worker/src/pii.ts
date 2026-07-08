@@ -7,7 +7,7 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs
   { pattern: /\b[A-Z]{2}\d{2}(?:[\s]?[A-Z0-9]{4}){3,7}\b/g,                 type: 'IBAN'       },
   { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
-  { pattern: /\b\d{9}\b(?=.*routing|\brouting\b.*\d{9})/gi,                   type: 'ROUTING'    },
+  { pattern: /(?<=\brouting\b[^0-9]{0,20})\d{9}\b|\b\d{9}\b(?=[^0-9]{0,20}\brouting\b)/gi, type: 'ROUTING' },
   { pattern: /\b\d{2}-\d{7}\b/g,                                               type: 'TAX_ID'     },
   // Phone — US + ES
   { pattern: /\b(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,         type: 'PHONE'      },
@@ -18,7 +18,7 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // Medical / HR IDs
   { pattern: /\bMRN[-\s]?\d{4,}\b/gi,                                          type: 'MRN'        },
   { pattern: /\bEMP[-\s]?\d{4,}\b/gi,                                          type: 'EMP_ID'     },
-  { pattern: /\b(APP|BC|ID)[-#]?[A-Z0-9]{4,}\b/g,                            type: 'ID'         },
+  { pattern: /\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}\b|\b[A-Z]{2,4}-\d{4,}\b/g, type: 'ID' },
   // Medical keywords
   { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical|cardiologist|troponin|ECG)\b/gi, type: 'MEDICAL_KW' },
 ]
