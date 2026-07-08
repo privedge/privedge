@@ -21,6 +21,21 @@ test('detectPII flags common regex PII types', () => {
   assert.ok(detectPII('card 4716 1234 5678 9012').types.includes('CARD'))
 })
 
+test('detectPII catches Spanish phone formats with spacing', () => {
+  assert.ok(detectPII('llámame al +34 612 345 678').types.includes('PHONE'))
+  assert.ok(detectPII('tel: 91 234 56 78').types.includes('PHONE'))
+  assert.ok(detectPII('móvil 612 34 56 78').types.includes('PHONE'))
+  assert.ok(detectPII('612345678').types.includes('PHONE'))
+})
+
+test('spaced-phone pattern does not fire inside IBANs or cards', () => {
+  const iban = detectPII('IBAN ES91 2100 0418 4502 0005 1332')
+  assert.ok(!iban.types.includes('PHONE'), 'PHONE fired inside IBAN')
+  assert.deepEqual(iban.types, ['IBAN'])
+  const card = detectPII('card 4532-1567-8901-2345')
+  assert.ok(!card.types.includes('PHONE'), 'PHONE fired inside card number')
+})
+
 test('detectPII returns clean for non-PII text', () => {
   const r = detectPII('Summarize the differences between TCP and UDP.')
   assert.equal(r.detected, false)

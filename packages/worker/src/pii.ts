@@ -13,7 +13,11 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   { pattern: /\b\d{2}-\d{7}\b/g,                                               type: 'TAX_ID'     },
   // Phone — US + ES
   { pattern: /\b(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/g,         type: 'PHONE'      },
-  { pattern: /\b(\+?34|0034)?[\s-]?[6789]\d{8}\b/g,                           type: 'PHONE'      },
+  // ES phones: contiguous (612345678) + real-world groupings — 3-3-3 (612 345 678),
+  // 3-2-2-2 (612 34 56 78), 2-3-2-2 landline (91 234 56 78) — with optional +34/0034.
+  // Lookarounds keep it from firing mid-number; IBAN/CARD run earlier so span
+  // resolution in detectPII stops digit groups inside them from counting as PHONE.
+  { pattern: /(?<!\d)(?:(?:\+|00)34[\s.-]?)?(?:[6789]\d{8}|[6789]\d{2}[\s.-]\d{3}[\s.-]\d{3}|[6789]\d{2}(?:[\s.-]\d{2}){3}|[6789]\d[\s.-]\d{3}(?:[\s.-]\d{2}){2})(?!\d)/g, type: 'PHONE' },
   // Date patterns
   { pattern: /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/g,                               type: 'DATE'       },
   { pattern: /\b\d{4}-\d{2}-\d{2}\b/g,                                        type: 'DATE'       },
