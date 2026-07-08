@@ -3,7 +3,7 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,        type: 'EMAIL'      },
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                        type: 'SSN'        },
   { pattern: /\b[0-9]{8}[-\s]?[A-Z]\b|\b[XYZ][0-9]{7}[-\s]?[A-Z]\b/g,      type: 'DNI'        },
-  { pattern: /\b[A-Z]{1,3}\d{6,9}\b/g,                                        type: 'PASSPORT'   },
+  { pattern: /\b[A-Z]{1,3}[-\s]?\d{6,9}\b/g,                                   type: 'PASSPORT'   },
   // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs
   { pattern: /\b[A-Z]{2}\d{2}(?:[\s]?[A-Z0-9]{4}){3,7}\b/g,                 type: 'IBAN'       },
   { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
@@ -37,14 +37,19 @@ export type NerEntity = { type: string; value: string }
 
 // ── Detection ──────────────────────────────────────────────────────────────
 
-/** Scans text with regex patterns. Returns detected PII types (one entry per type, not per individual match). */
+/** Scans text with regex patterns. Returns detected PII types and total match count across all patterns. */
 export function detectPII(text: string): { detected: boolean; matches: number; types: string[] } {
   const types: string[] = []
+  let totalMatches = 0
   for (const { pattern, type } of PII_PATTERNS) {
     pattern.lastIndex = 0
-    if (pattern.test(text)) types.push(type)
+    const found = text.match(pattern)
+    if (found) {
+      types.push(type)
+      totalMatches += found.length
+    }
   }
-  return { detected: types.length > 0, matches: types.length, types }
+  return { detected: types.length > 0, matches: totalMatches, types }
 }
 
 /** Scans for hardcoded secrets (API keys, DB URIs, JWTs). Runs before PII patterns inside anonymize() because secrets are longer and more specific — processing them first avoids partial overlaps. */
