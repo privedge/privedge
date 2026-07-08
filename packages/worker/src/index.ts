@@ -2,7 +2,7 @@ import { getLandingHTML } from './landing'
 import {
   detectPII,
   detectSecrets,
-  detectPIINER,
+  detectPIINERCached,
   extractMessages,
   getMessages,
   anonymize,
@@ -149,12 +149,17 @@ export default {
     // Secret detection — runs sync, no cost
     const secrets = detectSecrets(prompt)
 
-    // PII detection — regex always; NER only for Pro/Enterprise
+    // PII detection — regex always; NER only for Pro/Enterprise.
+    // anonymize: NER always runs — its entities are required to mask names/orgs before
+    // the text egresses to cloud; skipping it when regex hits would leak them in the clear.
+    // edge: NER only decides cloud-vs-edge routing, so if regex already detected (request
+    // stays on edge regardless) the call adds nothing and is skipped.
     const isPaidTier = keyData.tier === 'pro' || keyData.tier === 'enterprise'
-    const [regexResult, nerResult] = await Promise.all([
-      Promise.resolve(detectPII(prompt)),
-      isPaidTier ? detectPIINER(prompt, env.AI) : Promise.resolve({ detected: false, entities: [] }),
-    ])
+    const regexResult = detectPII(prompt)
+    const nerNeeded = isPaidTier && (piiStrategy === 'anonymize' || !regexResult.detected)
+    const nerResult = nerNeeded
+      ? await detectPIINERCached(prompt, env.AI, env.PRIVEDGE_KEYS)
+      : { detected: false, entities: [] }
 
     const nerEntities: NerEntity[] = nerResult.entities
     const detected = regexResult.detected || nerResult.detected

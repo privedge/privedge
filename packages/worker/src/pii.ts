@@ -104,6 +104,29 @@ export async function detectPIINER(
   }
 }
 
+/**
+ * Negative-cache wrapper for detectPIINER, keyed by SHA-256 of the text in KV (1h TTL).
+ * Only clean verdicts are cached — caching positives would persist PII values in KV.
+ * Saves the LLM call on repeated/templated clean traffic; any text with entities re-runs.
+ */
+export async function detectPIINERCached(
+  text: string,
+  ai: Ai,
+  kv: KVNamespace,
+): Promise<{ detected: boolean; entities: NerEntity[] }> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+  const hash = [...new Uint8Array(digest)]
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+  const kvKey = `ner:clean:${hash}`
+
+  if (await kv.get(kvKey)) return { detected: false, entities: [] }
+
+  const result = await detectPIINER(text, ai)
+  if (!result.detected) await kv.put(kvKey, '1', { expirationTtl: 3600 })
+  return result
+}
+
 // ── Anonymization ──────────────────────────────────────────────────────────
 
 export type AnonMap = Record<string, string>
