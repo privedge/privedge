@@ -3,7 +3,9 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,        type: 'EMAIL'      },
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                        type: 'SSN'        },
   { pattern: /\b[0-9]{8}[-\s]?[A-Z]\b|\b[XYZ][0-9]{7}[-\s]?[A-Z]\b/g,      type: 'DNI'        },
-  { pattern: /\b[A-Z]{1,3}[-\s]?\d{6,9}\b/g,                                   type: 'PASSPORT'   },
+  // Lookahead excludes known account/record prefixes (they belong to ID below) so
+  // BC-9913482 stays an insurance ID and doesn't double-fire as PASSPORT
+  { pattern: /\b(?!(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#\s]?\d)[A-Z]{1,3}[-\s]?\d{6,9}\b/g, type: 'PASSPORT' },
   // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs
   { pattern: /\b[A-Z]{2}\d{2}(?:[\s]?[A-Z0-9]{4}){3,7}\b/g,                 type: 'IBAN'       },
   { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
@@ -18,7 +20,9 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // Medical / HR IDs
   { pattern: /\bMRN[-\s]?\d{4,}\b/gi,                                          type: 'MRN'        },
   { pattern: /\bEMP[-\s]?\d{4,}\b/gi,                                          type: 'EMP_ID'     },
-  { pattern: /\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}\b|\b[A-Z]{2,4}-\d{4,}\b/g, type: 'ID' },
+  // 2nd alt capped at 4-5 digits: 6-9 digit codes belong exclusively to PASSPORT.
+  // MRN/EMP excluded — they have dedicated patterns above and would double-count.
+  { pattern: /\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}\b|\b(?!(?:MRN|EMP)-)[A-Z]{2,4}-\d{4,5}\b/g, type: 'ID' },
   // Medical keywords
   { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical|cardiologist|troponin|ECG)\b/gi, type: 'MEDICAL_KW' },
 ]
@@ -37,17 +41,29 @@ export type NerEntity = { type: string; value: string }
 
 // ── Detection ──────────────────────────────────────────────────────────────
 
-/** Scans text with regex patterns. Returns detected PII types and total match count across all patterns. */
+/**
+ * Scans text with regex patterns. Returns detected PII types and total match count.
+ * Overlap-aware: a match overlapping a span already claimed by an earlier (higher-priority)
+ * pattern is skipped — mirrors anonymize(), which replaces sequentially so later patterns
+ * never see text already consumed (e.g. CARD groups inside an IBAN, PASSPORT over a DNI).
+ * Keeps pii_matches consistent with what anonymize actually masks.
+ */
 export function detectPII(text: string): { detected: boolean; matches: number; types: string[] } {
+  const spans: Array<{ start: number; end: number }> = []
   const types: string[] = []
   let totalMatches = 0
   for (const { pattern, type } of PII_PATTERNS) {
     pattern.lastIndex = 0
-    const found = text.match(pattern)
-    if (found) {
-      types.push(type)
-      totalMatches += found.length
+    let hit = false
+    for (const m of text.matchAll(pattern)) {
+      const start = m.index ?? 0
+      const end = start + m[0].length
+      if (spans.some(s => start < s.end && end > s.start)) continue
+      spans.push({ start, end })
+      hit = true
+      totalMatches++
     }
+    if (hit) types.push(type)
   }
   return { detected: types.length > 0, matches: totalMatches, types }
 }
@@ -131,6 +147,11 @@ export async function detectPIINERCached(
 
 export type AnonMap = Record<string, string>
 
+// Detection-only signals: they flag context for routing/detection but are not
+// identifying data — masking generic words like "patient" or "ECG" would gut
+// the prompt's meaning for the cloud LLM without protecting anyone.
+const DETECTION_ONLY = new Set(['MEDICAL_KW'])
+
 /**
  * Replaces PII and secret matches with typed tokens (e.g. `<EMAIL_1>`) and returns a
  * reverse map for deanonymize(). Order matters: secrets run first, then regex PII, then
@@ -163,6 +184,7 @@ export function anonymize(
 
     // Regex-based PII
     for (const { pattern, type } of PII_PATTERNS) {
+      if (DETECTION_ONLY.has(type)) continue
       pattern.lastIndex = 0
       result = result.replace(pattern, match => {
         const t = token(type)

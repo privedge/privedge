@@ -96,6 +96,16 @@ test('deanonymize is substring-safe across overlapping token numbers', () => {
   assert.equal(deanonymize('<PERSON_11> and <PERSON_1>', map), 'Bob and Alice')
 })
 
+test('anonymize keeps detection-only keywords (MEDICAL_KW) in the clear', () => {
+  // "patient"/"ECG" flag medical context for detection but are not identifying
+  // data — masking them would destroy the prompt's meaning for the cloud LLM.
+  const { messages } = anonymize(msg('Patient admitted with chest pain, ordered an ECG'), [])
+  const out = messages[0].content
+  assert.ok(out.includes('Patient'), 'MEDICAL_KW was masked')
+  assert.ok(out.includes('ECG'), 'MEDICAL_KW was masked')
+  assert.ok(detectPII('Patient ordered an ECG').types.includes('MEDICAL_KW'), 'detection lost')
+})
+
 // ── NER entities ──────────────────────────────────────────────────────────────
 
 test('anonymize replaces ALL occurrences of a NER entity and round-trips', () => {
