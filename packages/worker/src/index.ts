@@ -339,6 +339,16 @@ function applyModelPrefix(body: Record<string, unknown>, prefix: string): Record
 }
 
 /**
+ * OpenAI deprecated `max_tokens` in favor of `max_completion_tokens` for newer models
+ * (o1, o3, gpt-5.x). Rename it so all models work without the caller needing to know.
+ */
+function normalizeOpenAIParams(body: Record<string, unknown>): Record<string, unknown> {
+  if (!('max_tokens' in body)) return body
+  const { max_tokens, ...rest } = body
+  return { ...rest, max_completion_tokens: max_tokens }
+}
+
+/**
  * Routes the request to Workers AI (edge inference) without anonymization.
  * PII never leaves the Cloudflare network — the LLM runs on the same edge node.
  * Returns an OpenAI-compatible chat completion response.
@@ -402,7 +412,7 @@ async function routeToCloudAnon(
   meta: StrategyMeta,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
-  const outBody = applyModelPrefix(anonBody as Record<string, unknown>, modelPrefix)
+  const outBody = normalizeOpenAIParams(applyModelPrefix(anonBody as Record<string, unknown>, modelPrefix))
   const response = await fetch(url, {
     method: 'POST',
     headers,
@@ -448,7 +458,7 @@ async function routeToCloud(
   meta: StrategyMeta,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
-  const outBody = applyModelPrefix(body as Record<string, unknown>, modelPrefix)
+  const outBody = normalizeOpenAIParams(applyModelPrefix(body as Record<string, unknown>, modelPrefix))
   const response = await fetch(url, {
     method: 'POST',
     headers,
