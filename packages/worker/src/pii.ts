@@ -27,8 +27,6 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // 2nd alt capped at 4-5 digits: 6-9 digit codes belong exclusively to PASSPORT.
   // MRN/EMP excluded — they have dedicated patterns above and would double-count.
   { pattern: /\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}\b|\b(?!(?:MRN|EMP)-)[A-Z]{2,4}-\d{4,5}\b/g, type: 'ID' },
-  // Medical keywords
-  { pattern: /\b(paciente|patient|diagnos|historial|clinical|medical|cardiologist|troponin|ECG)\b/gi, type: 'MEDICAL_KW' },
 ]
 
 const SECRET_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
@@ -151,11 +149,6 @@ export async function detectPIINERCached(
 
 export type AnonMap = Record<string, string>
 
-// Detection-only signals: they flag context for routing/detection but are not
-// identifying data — masking generic words like "patient" or "ECG" would gut
-// the prompt's meaning for the cloud LLM without protecting anyone.
-const DETECTION_ONLY = new Set(['MEDICAL_KW'])
-
 /**
  * Replaces PII and secret matches with typed tokens (e.g. `<EMAIL_1>`) and returns a
  * reverse map for deanonymize(). Order matters: secrets run first, then regex PII, then
@@ -188,7 +181,6 @@ export function anonymize(
 
     // Regex-based PII
     for (const { pattern, type } of PII_PATTERNS) {
-      if (DETECTION_ONLY.has(type)) continue
       pattern.lastIndex = 0
       result = result.replace(pattern, match => {
         const t = token(type)
