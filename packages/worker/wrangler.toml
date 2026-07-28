@@ -24,24 +24,9 @@ binding = "AI"
 binding = "PRIVEDGE_KEYS"
 id = "5adc9737ef5a4978a380e024d374fef3"
 
-# ─── Dev environment ──────────────────────────────────────────────────────────
-# Deploy with: wrangler deploy --env dev
-# NEVER deploy with --env dev to the production worker (privedge-worker).
-# The PRIVEDGE_DEV_LOGS binding and DEV_LOGGING=true flag MUST NOT exist in
-# the production environment. When active, raw prompt content (after
-# anonymization) and model responses are stored in KV with a 7-day TTL.
-# Remove DEV_LOGGING secret and this binding before any compliance audit.
-[env.dev]
-name = "privedge-worker-dev"
-
-[env.dev.ai]
-binding = "AI"
-
-[[env.dev.kv_namespaces]]
-binding = "PRIVEDGE_KEYS"
-id = "5adc9737ef5a4978a380e024d374fef3"
-
-[[env.dev.kv_namespaces]]
+# Dev logging — desactivado por defecto. Activar: wrangler secret put DEV_LOGGING (valor: true)
+# Antes de auditoría: wrangler secret delete DEV_LOGGING — los datos expiran solos en 7 días.
+[[kv_namespaces]]
 binding = "PRIVEDGE_DEV_LOGS"
 id = "d7a001a8834d43cea88545d79e8f3d31"
 
