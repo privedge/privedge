@@ -34,6 +34,9 @@ id = "5adc9737ef5a4978a380e024d374fef3"
 [env.dev]
 name = "privedge-worker-dev"
 
+[env.dev.ai]
+binding = "AI"
+
 [[env.dev.kv_namespaces]]
 binding = "PRIVEDGE_KEYS"
 id = "5adc9737ef5a4978a380e024d374fef3"
