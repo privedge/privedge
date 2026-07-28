@@ -82,30 +82,36 @@ export function detectSecrets(text: string): { detected: boolean; types: string[
 }
 
 const nerPrompt = (text: string) =>
-  `List PII entities in this text. Reply with JSON only, no explanation.
-{"entities":[{"type":"PERSON","value":"exact name"},{"type":"ORG","value":"exact org"}]}
-Types: PERSON=full names, ORG=companies/hospitals/insurers, ADDRESS=street addresses
-Values must appear verbatim. Empty: {"entities":[]}
+  `Extract PERSON names, ORG names, and ADDRESS values from this text. Reply with JSON only — no markdown, no explanation.
+Format: {"entities":[{"type":"PERSON","value":"exact name as it appears"},{"type":"ORG","value":"exact org"}]}
+Rules:
+- PERSON: full names of people (patients, doctors, staff)
+- ORG: hospitals, clinics, insurers, companies
+- ADDRESS: street addresses
+- DO NOT include emails, phones, dates, IDs, passport numbers — only PERSON/ORG/ADDRESS
+- Values must appear verbatim in the text
+- If none found: {"entities":[]}
 Text: ${JSON.stringify(text)}`
 
 /**
  * Calls Workers AI (LLaMA) for named entity recognition (PERSON, ORG, ADDRESS).
- * Only invoked for Pro/Enterprise tiers. Falls back to empty on any LLM or parse error
- * to avoid blocking the request — NER is best-effort, regex is the safety net.
+ * Only invoked for Pro/Enterprise tiers. Falls back gracefully on any error.
+ * Returns an `error` flag so callers can distinguish "clean" from "failed".
  */
 export async function detectPIINER(
   text: string,
   ai: Ai,
-): Promise<{ detected: boolean; entities: NerEntity[] }> {
+): Promise<{ detected: boolean; entities: NerEntity[]; error?: boolean }> {
   try {
     const result = await (ai.run as Function)('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
       messages: [
-        { role: 'system', content: 'Reply with valid JSON only. No markdown, no explanation.' },
+        { role: 'system', content: 'Reply with valid JSON only. No markdown, no explanation, no extra text.' },
         { role: 'user', content: nerPrompt(text) },
       ],
-      max_tokens: 256,
+      max_tokens: 512,
     })
     const resp = (result as { response: unknown }).response
+    console.log('[NER raw]', typeof resp === 'string' ? resp.slice(0, 300) : JSON.stringify(resp).slice(0, 300))
     const parsed = (typeof resp === 'string'
       ? JSON.parse(resp.match(/\{[\s\S]*\}/)?.[0] ?? '{}')
       : resp) as { entities?: unknown }
@@ -117,8 +123,8 @@ export async function detectPIINER(
       : []
     return { detected: entities.length > 0, entities }
   } catch (e) {
-    console.log('[NER error]', String(e))
-    return { detected: false, entities: [] }
+    console.error('[NER error]', String(e))
+    return { detected: false, entities: [], error: true }
   }
 }
 
@@ -141,7 +147,8 @@ export async function detectPIINERCached(
   if (await kv.get(kvKey)) return { detected: false, entities: [] }
 
   const result = await detectPIINER(text, ai)
-  if (!result.detected) await kv.put(kvKey, '1', { expirationTtl: 3600 })
+  // Only cache clean verdicts when NER ran successfully — never cache errors.
+  if (!result.detected && !result.error) await kv.put(kvKey, '1', { expirationTtl: 3600 })
   return result
 }
 
@@ -163,7 +170,7 @@ export function anonymize(
 
   const token = (type: string) => {
     counters[type] = (counters[type] ?? 0) + 1
-    return `<${type}_${counters[type]}>`
+    return `[ANON_${type}_${counters[type]}]`
   }
 
   const anonymizeText = (text: string): string => {
