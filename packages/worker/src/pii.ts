@@ -170,7 +170,7 @@ export function anonymize(
 
   const token = (type: string) => {
     counters[type] = (counters[type] ?? 0) + 1
-    return `[ANON_${type}_${counters[type]}]`
+    return `[${type}_${counters[type]}]`
   }
 
   const anonymizeText = (text: string): string => {
