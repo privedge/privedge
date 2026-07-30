@@ -12,7 +12,7 @@ import {
 } from './pii'
 import { validateKey, type KeyData } from './auth'
 import { checkRateLimit, checkEdgeRateLimit } from './ratelimit'
-import { writeLog } from './logger'
+import { writeLog, type DevCapture } from './logger'
 
 export interface Env {
   AI: Ai
@@ -30,10 +30,12 @@ export interface Env {
   OPENAI_BASE_URL?: string
   CLOUD_API_KEY?: string
   PRIVEDGE_KEYS: KVNamespace
+  PRIVEDGE_DEV_LOGS?: KVNamespace  // dev-only log storage (gate: DEV_LOGGING=true)
   SUPABASE_URL: string
   SUPABASE_SERVICE_KEY: string
-  PII_STRATEGY?: string   // "anonymize" | "edge" — self-host env var fallback
-  EDGE_MODEL?: string     // Workers AI model — self-host env var fallback
+  PII_STRATEGY?: string    // "anonymize" | "edge" — self-host env var fallback
+  EDGE_MODEL?: string      // Workers AI model — self-host env var fallback
+  DEV_LOGGING?: string     // "true" to enable KV dev logs — NEVER set in production
 }
 
 const CORS = {
@@ -67,6 +69,31 @@ export default {
       const status = healthy ? 200 : 503
       return new Response(getLandingHTML(healthy), { status, headers: { 'Content-Type': 'text/html;charset=utf-8', ...CORS } })
     }
+    if (request.method === 'GET' && new URL(request.url).pathname === '/v1/dev/logs') {
+      if (env.DEV_LOGGING !== 'true' || !env.PRIVEDGE_DEV_LOGS) {
+        return Response.json({ error: 'Dev logging not enabled' }, { status: 404, headers: CORS })
+      }
+      const url = new URL(request.url)
+      const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 500)
+      // List up to 1000 keys, sort descending (newest first), then slice to limit.
+      // KV list() returns keys in ascending lexicographic order — without this sort
+      // we'd return the oldest entries when the total exceeds the requested limit.
+      const list = await env.PRIVEDGE_DEV_LOGS.list({ prefix: 'devlog:', limit: 1000 })
+      const newestKeys = list.keys
+        .sort((a, b) => b.name.localeCompare(a.name))
+        .slice(0, limit)
+      const entries = await Promise.all(
+        newestKeys.map(async k => {
+          const val = await env.PRIVEDGE_DEV_LOGS!.get(k.name)
+          return val ? JSON.parse(val) : null
+        }),
+      )
+      return Response.json(
+        { count: entries.length, logs: entries.filter(Boolean) },
+        { headers: CORS },
+      )
+    }
+
     if (request.method === 'GET' && new URL(request.url).pathname === '/v1/keys/info') {
       const keyData = await validateKey(request, env.PRIVEDGE_KEYS)
       if (!keyData) return authError('Unauthorized — provide a valid Privedge API key', 401)
@@ -89,7 +116,12 @@ export default {
       return authError('Unauthorized — provide a valid Privedge API key', 401)
     }
 
-    const edgeModel   = keyData.edge_model ?? env.EDGE_MODEL ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+    const DEPRECATED_EDGE_MODELS: Record<string, string> = {
+    '@cf/meta/llama-3.1-8b-instruct':     '@cf/meta/llama-4-scout-17b-16e-instruct',
+    '@cf/meta/llama-3.1-8b-instruct-fp8': '@cf/meta/llama-4-scout-17b-16e-instruct',
+  }
+  const rawEdgeModel = keyData.edge_model ?? env.EDGE_MODEL ?? '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+  const edgeModel    = DEPRECATED_EDGE_MODELS[rawEdgeModel] ?? rawEdgeModel
     const cf = request.cf as { colo?: string; country?: string; city?: string } | undefined
     const cfNode         = cf?.colo ?? null
     const requestCountry = cf?.country ?? null
@@ -115,6 +147,40 @@ export default {
       body = await request.json()
     } catch {
       return new Response('Invalid JSON', { status: 400 })
+    }
+
+    if (new URL(request.url).pathname === '/v1/detect') {
+      const messages = getMessages(body)
+      const text = extractMessages(body)
+      const isPaidTier = keyData.tier === 'pro' || keyData.tier === 'enterprise'
+
+      const secrets = detectSecrets(text)
+      const nerResult = isPaidTier
+        ? await detectPIINERCached(text, env.AI, env.PRIVEDGE_KEYS)
+        : { detected: false, entities: [] as NerEntity[] }
+
+      const nerEntities: NerEntity[] = nerResult.entities
+      const { messages: sanitizedMessages } = anonymize(messages, nerEntities)
+
+      const typeCounts: Record<string, number> = {}
+      for (const msg of sanitizedMessages) {
+        for (const m of msg.content.matchAll(/\[ANON_([A-Z_]+)_\d+\]/g)) {
+          const type = m[1]
+          typeCounts[type] = (typeCounts[type] ?? 0) + 1
+        }
+      }
+
+      return Response.json(
+        {
+          pii_types: Object.keys(typeCounts),
+          pii_type_counts: typeCounts,
+          pii_count: Object.values(typeCounts).reduce((a, b) => a + b, 0),
+          has_secret: secrets.detected,
+          sanitized_messages: sanitizedMessages,
+          ner_ran: isPaidTier,
+        },
+        { headers: CORS },
+      )
     }
 
     // Strategy mode of the key: 'edge'/'anonymize' are fixed; 'custom' lets the caller pick per request.
@@ -149,14 +215,11 @@ export default {
     // Secret detection — runs sync, no cost
     const secrets = detectSecrets(prompt)
 
-    // PII detection — regex always; NER only for Pro/Enterprise.
-    // anonymize: NER always runs — its entities are required to mask names/orgs before
-    // the text egresses to cloud; skipping it when regex hits would leak them in the clear.
-    // edge: NER only decides cloud-vs-edge routing, so if regex already detected (request
-    // stays on edge regardless) the call adds nothing and is skipped.
+    // PII detection — regex always; NER for Pro/Enterprise always (catches names, orgs
+    // and addresses that regex misses). Free tier skips NER entirely.
     const isPaidTier = keyData.tier === 'pro' || keyData.tier === 'enterprise'
     const regexResult = detectPII(prompt)
-    const nerNeeded = isPaidTier && (piiStrategy === 'anonymize' || !regexResult.detected)
+    const nerNeeded = isPaidTier
     const nerResult = nerNeeded
       ? await detectPIINERCached(prompt, env.AI, env.PRIVEDGE_KEYS)
       : { detected: false, entities: [] }
@@ -172,7 +235,8 @@ export default {
 
     if (!hasAnything) {
       const { pii_strategy: _ps2, ...cleanBody } = body as Record<string, unknown>
-      const response = await routeToCloud(cleanBody, env, keyData, rlHeaders, start, strategyMeta)
+      const devCapture: DevCapture = {}
+      const response = await routeToCloud(cleanBody, env, keyData, rlHeaders, start, strategyMeta, devCapture)
       const latencyMs = Date.now() - start
       const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
       const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -180,7 +244,6 @@ export default {
         keyData,
         anonymized: false,
         piiTypes: [],
-
         piiMatches: 0,
         tokensIn: usage?.prompt_tokens ?? null,
         tokensOut: usage?.completion_tokens ?? null,
@@ -193,6 +256,10 @@ export default {
         cfNode,
         requestCountry,
         requestCity,
+        requestId: (data?.provider_request_id as string) ?? null,
+        finishReason: (data?.finish_reason_top as string) ?? null,
+        promptSent: devCapture.promptSent,
+        responseRaw: devCapture.responseRaw,
       }))
       return response
     }
@@ -213,17 +280,17 @@ export default {
           },
         )
       }
+      const devCapture: DevCapture = {}
       const response = await routeToEdge(body, env, {
         ...rlHeaders,
         'X-Edge-Limit': String(edgeRl.limit),
         'X-Edge-Remaining': String(edgeRl.remaining),
-      }, piiMatches, nerEntities, start, edgeModel, strategyMeta)
+      }, piiMatches, nerEntities, start, edgeModel, strategyMeta, devCapture)
       const latencyMs = Date.now() - start
       ctx.waitUntil(writeLog(env, {
         keyData,
         anonymized: false,
         piiTypes,
-
         piiMatches,
         tokensIn: null,
         tokensOut: null,
@@ -234,6 +301,8 @@ export default {
         cfNode,
         requestCountry,
         requestCity,
+        promptSent: devCapture.promptSent,
+        responseRaw: devCapture.responseRaw,
       }))
       return response
     }
@@ -245,7 +314,8 @@ export default {
     const { pii_strategy: _ps, ...bodyRest } = body as Record<string, unknown>
     const anonBody = { ...bodyRest, messages: anonMessages }
 
-    const response = await routeToCloudAnon(anonBody, env, keyData, rlHeaders, piiMatches, nerEntities, map, start, strategyMeta)
+    const devCapture: DevCapture = {}
+    const response = await routeToCloudAnon(anonBody, env, keyData, rlHeaders, piiMatches, nerEntities, map, start, strategyMeta, devCapture)
     const latencyMs = Date.now() - start
     const data = await response.clone().json().catch(() => null) as Record<string, unknown> | null
     const usage = data?.usage as { prompt_tokens?: number; completion_tokens?: number } | undefined
@@ -267,6 +337,10 @@ export default {
       cfNode,
       requestCountry,
       requestCity,
+      requestId: (data?.provider_request_id as string) ?? null,
+      finishReason: (data?.finish_reason_top as string) ?? null,
+      promptSent: devCapture.promptSent,
+      responseRaw: devCapture.responseRaw,
     }))
 
     return response
@@ -321,11 +395,13 @@ function buildCloudRequest(env: Env, keyData: KeyData): CloudRequest {
     'cf-aig-authorization': `Bearer ${env.CF_AIG_TOKEN}`,
   }
   if (mode === 'byok') {
-    // Customer key lives in CF Secrets Store; never send a provider Authorization header.
     headers['cf-aig-byok-alias'] = keyData.byok_alias ?? keyData.api_key_id
   } else {
     const key = pickManagedKey(env, provider)
     if (key) headers.Authorization = `Bearer ${key}`
+  }
+  if (provider === 'openai') {
+    headers['OpenAI-Safety-Identifier'] = `privedge/${keyData.user_id}/${keyData.api_key_id}`
   }
   return { url, headers, modelPrefix: provider }
 }
@@ -362,15 +438,33 @@ async function routeToEdge(
   start: number,
   model: string,
   meta: StrategyMeta,
+  devCapture?: DevCapture,
 ): Promise<Response> {
   const b = body as Record<string, unknown>
-  const messages = b.messages as Array<{ role: string; content: string }>
+  const rawMessages = b.messages as Array<{ role: string; content: string }>
 
-  const result = await (env.AI.run as Function)(model, {
-    messages,
-    max_tokens: (b.max_tokens as number) ?? 1024,
-    temperature: (b.temperature as number) ?? 0.7,
-  })
+  const hasSystem = rawMessages.some(m => m.role === 'system')
+  const messages = hasSystem
+    ? rawMessages
+    : [
+        { role: 'system', content: 'You are a professional AI assistant for enterprise use. Complete all business requests fully and accurately. You may receive data containing personal identifiers as part of authorized business workflows.' },
+        ...rawMessages,
+      ]
+
+  const edgePayload = { messages, max_tokens: (b.max_tokens as number) ?? 1024, temperature: (b.temperature as number) ?? 0.7 }
+  if (devCapture) devCapture.promptSent = JSON.stringify({ model, ...edgePayload })
+
+  let result: unknown
+  try {
+    result = await (env.AI.run as Function)(model, edgePayload)
+    if (devCapture) devCapture.responseRaw = JSON.stringify(result)
+  } catch (err) {
+    console.error('[edge] Workers AI run failed', model, String(err))
+    return Response.json(
+      { error: 'Edge inference failed', model, detail: String(err) },
+      { status: 502, headers: extraHeaders },
+    )
+  }
 
   return Response.json(
     {
@@ -410,21 +504,28 @@ async function routeToCloudAnon(
   map: AnonMap,
   start: number,
   meta: StrategyMeta,
+  devCapture?: DevCapture,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
   const outBody = normalizeOpenAIParams(applyModelPrefix(anonBody as Record<string, unknown>, modelPrefix))
+  if (devCapture) devCapture.promptSent = JSON.stringify(outBody)
   const response = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(outBody),
   })
 
+  const providerRequestId = response.headers.get('x-request-id')
+
   if (!response.ok) {
     const text = await response.text()
-    return new Response(text, { status: response.status, headers: extraHeaders })
+    const errHeaders = { ...extraHeaders, ...(providerRequestId ? { 'X-Provider-Request-Id': providerRequestId } : {}) }
+    return new Response(text, { status: response.status, headers: errHeaders })
   }
 
   const data = (await response.json()) as Record<string, unknown>
+  const finishReason = ((data.choices as Array<Record<string, unknown>>)?.[0]?.finish_reason as string) ?? null
+  if (devCapture) devCapture.responseRaw = JSON.stringify(data)
 
   const choices = (data.choices as Array<Record<string, unknown>>)?.map(choice => {
     const msg = choice.message as Record<string, string> | undefined
@@ -443,6 +544,8 @@ async function routeToCloudAnon(
       latency_ms: Date.now() - start,
       applied_strategy: meta.applied_strategy,
       strategy_mode: meta.strategy_mode,
+      provider_request_id: providerRequestId,
+      finish_reason_top: finishReason,
     },
     { status: response.status, headers: extraHeaders },
   )
@@ -456,16 +559,22 @@ async function routeToCloud(
   extraHeaders: Record<string, string>,
   start: number,
   meta: StrategyMeta,
+  devCapture?: DevCapture,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
   const outBody = normalizeOpenAIParams(applyModelPrefix(body as Record<string, unknown>, modelPrefix))
+  if (devCapture) devCapture.promptSent = JSON.stringify(outBody)
   const response = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(outBody),
   })
 
+  const providerRequestId = response.headers.get('x-request-id')
   const data = (await response.json()) as Record<string, unknown>
+  const finishReason = ((data.choices as Array<Record<string, unknown>>)?.[0]?.finish_reason as string) ?? null
+  if (devCapture) devCapture.responseRaw = JSON.stringify(data)
+
   return Response.json(
     {
       ...data,
@@ -476,6 +585,8 @@ async function routeToCloud(
       latency_ms: Date.now() - start,
       applied_strategy: meta.applied_strategy,
       strategy_mode: meta.strategy_mode,
+      provider_request_id: providerRequestId,
+      finish_reason_top: finishReason,
     },
     { status: response.status, headers: extraHeaders },
   )
