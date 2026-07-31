@@ -3,11 +3,18 @@
  * against the given Workers AI model and returns the raw parsed entities
  * (pre-verbatim-filter) plus latency, so the runner can measure paraphrase rate.
  */
+// Kept in sync with production `nerPrompt` in ../src/pii.ts — the eval only means
+// something if it runs the exact prompt production runs.
 const nerPrompt = (text: string) =>
-  `List PII entities in this text. Reply with JSON only, no explanation.
-{"entities":[{"type":"PERSON","value":"exact name"},{"type":"ORG","value":"exact org"}]}
-Types: PERSON=full names, ORG=companies/hospitals/insurers, ADDRESS=street addresses
-Values must appear verbatim. Empty: {"entities":[]}
+  `Extract PERSON names, ORG names, and ADDRESS values from this text. Reply with JSON only — no markdown, no explanation.
+Format: {"entities":[{"type":"PERSON","value":"exact name as it appears"},{"type":"ORG","value":"exact org"}]}
+Rules:
+- PERSON: full names of people (patients, doctors, staff)
+- ORG: hospitals, clinics, insurers, companies
+- ADDRESS: street addresses
+- DO NOT include emails, phones, dates, IDs, passport numbers — only PERSON/ORG/ADDRESS
+- Values must appear verbatim in the text
+- If none found: {"entities":[]}
 Text: ${JSON.stringify(text)}`
 
 interface Env {
@@ -25,7 +32,7 @@ export default {
           { role: 'system', content: 'Reply with valid JSON only. No markdown, no explanation.' },
           { role: 'user', content: nerPrompt(text) },
         ],
-        max_tokens: 256,
+        max_tokens: 512,
       })
       const resp = (result as { response: unknown }).response
       const parsed = (typeof resp === 'string'

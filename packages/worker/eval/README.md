@@ -30,6 +30,26 @@ node run-eval.mjs 8788
 Modelos a comparar: editar el array `MODELS` en `run-eval.mjs`.
 Coste aproximado: ~$0.006/llamada con el 70B; 10 llamadas por modelo.
 
+## Resultados — 2026-07-31 (70B vs Llama-4-Scout-17B)
+
+Corrido sobre los 10 prompts REALES del demo (`packages/demo/src/scenarios.ts`), con el
+`nerPrompt` de producción sincronizado en `ner-eval-worker.ts`. Datos crudos en
+`eval-results-2026-07-31.json`.
+
+| Modelo | Recall | Falsos pos. | Errores | Latencia media |
+|---|---|---|---|---|
+| `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (producción) | **31/31 (100%)** | **0** | 0 | **1042ms** |
+| `@cf/meta/llama-4-scout-17b-16e-instruct` | 31/31 (100%) | 4 | 0 | 2123ms |
+
+Notas:
+- Empate en recall. El 70B "fast" (fp8) es **~2× más rápido** que el Scout 17B — más lento en los 10 casos.
+- El Scout **sobre-extrae**: `finance-en` añade BSA, FinCEN, "Cayman Islands"; `hr-es` añade "oficina Madrid".
+  Son verbatim → pasan el filtro → en `anonymize` se enmascararían = prompt degradado.
+- El 70B devuelve exactamente las entidades esperadas (0 FP).
+
+**Decisión: el 70B se queda.** El modelo más nuevo/grande no mejora recall y empeora latencia + precisión.
+Informe HTML: `privedge-platform/packages/demo/public/reports/ner-model-eval-70b-vs-scout-2026-07-31.html`.
+
 ## Resultados — 2026-07-08
 
 | Modelo | Recall | Errores | Latencia media |

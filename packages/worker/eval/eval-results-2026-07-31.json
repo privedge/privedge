@@ -1,0 +1,510 @@
+{
+  "generatedAt": "2026-07-31T11:05:58.370Z",
+  "port": "8788",
+  "models": {
+    "@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
+      "recallFound": 31,
+      "recallExpected": 31,
+      "recallPct": 100,
+      "paraphrased": 0,
+      "errors": 0,
+      "avgLatencyMs": 1042,
+      "cases": [
+        {
+          "id": "healthcare-en",
+          "expected": 4,
+          "found": 4,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 1511,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Jane Smith"
+            },
+            {
+              "type": "PERSON",
+              "value": "Dr. Robert Chen"
+            },
+            {
+              "type": "ORG",
+              "value": "Memorial Hospital"
+            },
+            {
+              "type": "ORG",
+              "value": "BlueCross"
+            }
+          ]
+        },
+        {
+          "id": "healthcare-es",
+          "expected": 4,
+          "found": 4,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 974,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "María García"
+            },
+            {
+              "type": "PERSON",
+              "value": "Dr. Javier López"
+            },
+            {
+              "type": "ORG",
+              "value": "Hospital Universitario La Paz"
+            },
+            {
+              "type": "ORG",
+              "value": "Sanitas"
+            }
+          ]
+        },
+        {
+          "id": "legal-en",
+          "expected": 5,
+          "found": 5,
+          "missed": [],
+          "returned": 5,
+          "paraphrased": 0,
+          "latencyMs": 1474,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Marcus Rodriguez"
+            },
+            {
+              "type": "PERSON",
+              "value": "Sarah Lee"
+            },
+            {
+              "type": "ORG",
+              "value": "TechCorp Inc."
+            },
+            {
+              "type": "ORG",
+              "value": "Reuters"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "123 Main St, New York NY 10001"
+            }
+          ]
+        },
+        {
+          "id": "legal-es",
+          "expected": 5,
+          "found": 5,
+          "missed": [],
+          "returned": 5,
+          "paraphrased": 0,
+          "latencyMs": 1222,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Rodríguez"
+            },
+            {
+              "type": "PERSON",
+              "value": "Ana Martínez"
+            },
+            {
+              "type": "ORG",
+              "value": "TechCorp España S.L."
+            },
+            {
+              "type": "ADDRESS",
+              "value": "C/ Serrano 47, 28001 Madrid"
+            },
+            {
+              "type": "ORG",
+              "value": "El País"
+            }
+          ]
+        },
+        {
+          "id": "finance-en",
+          "expected": 1,
+          "found": 1,
+          "missed": [],
+          "returned": 1,
+          "paraphrased": 0,
+          "latencyMs": 945,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Elena Vasquez"
+            }
+          ]
+        },
+        {
+          "id": "finance-es",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 611,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Elena Vázquez"
+            },
+            {
+              "type": "ORG",
+              "value": "Banco Raiffeisen Luxembourg"
+            }
+          ]
+        },
+        {
+          "id": "hr-en",
+          "expected": 3,
+          "found": 3,
+          "missed": [],
+          "returned": 3,
+          "paraphrased": 0,
+          "latencyMs": 869,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "David Kim"
+            },
+            {
+              "type": "PERSON",
+              "value": "Jennifer Walsh"
+            },
+            {
+              "type": "ORG",
+              "value": "Accenture"
+            }
+          ]
+        },
+        {
+          "id": "hr-es",
+          "expected": 3,
+          "found": 3,
+          "missed": [],
+          "returned": 3,
+          "paraphrased": 0,
+          "latencyMs": 952,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "David Kim"
+            },
+            {
+              "type": "PERSON",
+              "value": "Jennifer Walsh"
+            },
+            {
+              "type": "ORG",
+              "value": "Accenture"
+            }
+          ]
+        },
+        {
+          "id": "public-en",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 1089,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Mendoza"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "47 Main Street, Apt 1B, Madrid 28001"
+            }
+          ]
+        },
+        {
+          "id": "public-es",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 771,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Mendoza"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "C/ Mayor 47, 1ºB, 28001 Madrid"
+            }
+          ]
+        }
+      ]
+    },
+    "@cf/meta/llama-4-scout-17b-16e-instruct": {
+      "recallFound": 31,
+      "recallExpected": 31,
+      "recallPct": 100,
+      "paraphrased": 0,
+      "errors": 0,
+      "avgLatencyMs": 2123,
+      "cases": [
+        {
+          "id": "healthcare-en",
+          "expected": 4,
+          "found": 4,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 3338,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Jane Smith"
+            },
+            {
+              "type": "PERSON",
+              "value": "Dr. Robert Chen"
+            },
+            {
+              "type": "ORG",
+              "value": "Memorial Hospital"
+            },
+            {
+              "type": "ORG",
+              "value": "BlueCross"
+            }
+          ]
+        },
+        {
+          "id": "healthcare-es",
+          "expected": 4,
+          "found": 4,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 2613,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "María García"
+            },
+            {
+              "type": "PERSON",
+              "value": "Dr. Javier López"
+            },
+            {
+              "type": "ORG",
+              "value": "Hospital Universitario La Paz"
+            },
+            {
+              "type": "ORG",
+              "value": "Sanitas"
+            }
+          ]
+        },
+        {
+          "id": "legal-en",
+          "expected": 5,
+          "found": 5,
+          "missed": [],
+          "returned": 5,
+          "paraphrased": 0,
+          "latencyMs": 2648,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Marcus Rodriguez"
+            },
+            {
+              "type": "PERSON",
+              "value": "Sarah Lee"
+            },
+            {
+              "type": "ORG",
+              "value": "TechCorp Inc."
+            },
+            {
+              "type": "ORG",
+              "value": "Reuters"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "123 Main St, New York NY 10001"
+            }
+          ]
+        },
+        {
+          "id": "legal-es",
+          "expected": 5,
+          "found": 5,
+          "missed": [],
+          "returned": 5,
+          "paraphrased": 0,
+          "latencyMs": 2777,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Rodríguez"
+            },
+            {
+              "type": "PERSON",
+              "value": "Ana Martínez"
+            },
+            {
+              "type": "ORG",
+              "value": "TechCorp España S.L."
+            },
+            {
+              "type": "ORG",
+              "value": "El País"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "C/ Serrano 47, 28001 Madrid"
+            }
+          ]
+        },
+        {
+          "id": "finance-en",
+          "expected": 1,
+          "found": 1,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 2130,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Elena Vasquez"
+            },
+            {
+              "type": "ORG",
+              "value": "BSA"
+            },
+            {
+              "type": "ORG",
+              "value": "FinCEN"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "Cayman Islands"
+            }
+          ]
+        },
+        {
+          "id": "finance-es",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 1630,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Elena Vázquez"
+            },
+            {
+              "type": "ORG",
+              "value": "Banco Raiffeisen Luxembourg"
+            }
+          ]
+        },
+        {
+          "id": "hr-en",
+          "expected": 3,
+          "found": 3,
+          "missed": [],
+          "returned": 3,
+          "paraphrased": 0,
+          "latencyMs": 1453,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "David Kim"
+            },
+            {
+              "type": "PERSON",
+              "value": "Jennifer Walsh"
+            },
+            {
+              "type": "ORG",
+              "value": "Accenture"
+            }
+          ]
+        },
+        {
+          "id": "hr-es",
+          "expected": 3,
+          "found": 3,
+          "missed": [],
+          "returned": 4,
+          "paraphrased": 0,
+          "latencyMs": 1973,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "David Kim"
+            },
+            {
+              "type": "PERSON",
+              "value": "Jennifer Walsh"
+            },
+            {
+              "type": "ORG",
+              "value": "Accenture"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "oficina Madrid"
+            }
+          ]
+        },
+        {
+          "id": "public-en",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 1322,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Mendoza"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "47 Main Street, Apt 1B, Madrid 28001"
+            }
+          ]
+        },
+        {
+          "id": "public-es",
+          "expected": 2,
+          "found": 2,
+          "missed": [],
+          "returned": 2,
+          "paraphrased": 0,
+          "latencyMs": 1345,
+          "entities": [
+            {
+              "type": "PERSON",
+              "value": "Carlos Mendoza"
+            },
+            {
+              "type": "ADDRESS",
+              "value": "C/ Mayor 47, 1ºB, 28001 Madrid"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
