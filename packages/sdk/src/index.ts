@@ -30,6 +30,13 @@ export interface ChatCompletionResponse {
   anonymized: boolean
   pii_matches: number
   ner_entities: string[]
+  /**
+   * Whether the semantic (NER) layer ran. It is gated behind Pro/Enterprise, so on the
+   * Free tier this is `false` and `ner_entities` is always empty — names, organisations
+   * and addresses were never looked for, as opposed to looked for and not found.
+   * Check this before treating an empty `ner_entities` as "the prompt carries no names".
+   */
+  ner_ran: boolean
   latency_ms: number
   choices: {
     index: number

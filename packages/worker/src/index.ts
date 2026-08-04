@@ -48,6 +48,11 @@ const CORS = {
 interface StrategyMeta {
   applied_strategy: 'anonymize' | 'edge'        // what actually ran for this request
   strategy_mode: 'anonymize' | 'edge' | 'custom' // the key's configured mode
+  // Whether the semantic (NER) layer ran at all — it is gated behind Pro/Enterprise.
+  // Without this, `ner_entities: []` is ambiguous: it means both "NER ran and found
+  // nothing" and "NER never ran", and a Free-tier caller cannot tell that names, orgs
+  // and addresses were never looked for. Same class of ambiguity as the NER fail-safe.
+  ner_ran: boolean
 }
 
 /** Builds a JSON error response with CORS headers. */
@@ -207,7 +212,11 @@ export default {
       mode === 'custom'
         ? (bodyStrategy === 'edge' || bodyStrategy === 'anonymize' ? bodyStrategy : 'anonymize')
         : mode
-    const strategyMeta: StrategyMeta = { applied_strategy: piiStrategy, strategy_mode: mode }
+    // NER is gated by tier, so whether it ran is known from keyData alone — no need to
+    // wait for detection to finish. Echoed back so the caller can distinguish "no names
+    // found" from "names were never looked for" on the Free tier.
+    const nerRan = keyData.tier === 'pro' || keyData.tier === 'enterprise'
+    const strategyMeta: StrategyMeta = { applied_strategy: piiStrategy, strategy_mode: mode, ner_ran: nerRan }
 
     const start = Date.now()
     const prompt = extractMessages(body)
@@ -526,6 +535,7 @@ async function routeToEdge(
       latency_ms: Date.now() - start,
       applied_strategy: meta.applied_strategy,
       strategy_mode: meta.strategy_mode,
+      ner_ran: meta.ner_ran,
     },
     { headers: extraHeaders },
   )
@@ -585,6 +595,7 @@ async function routeToCloudAnon(
       latency_ms: Date.now() - start,
       applied_strategy: meta.applied_strategy,
       strategy_mode: meta.strategy_mode,
+      ner_ran: meta.ner_ran,
       provider_request_id: providerRequestId,
       finish_reason_top: finishReason,
     },
@@ -626,6 +637,7 @@ async function routeToCloud(
       latency_ms: Date.now() - start,
       applied_strategy: meta.applied_strategy,
       strategy_mode: meta.strategy_mode,
+      ner_ran: meta.ner_ran,
       provider_request_id: providerRequestId,
       finish_reason_top: finishReason,
     },
