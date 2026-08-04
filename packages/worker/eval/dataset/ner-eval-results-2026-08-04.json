@@ -1,0 +1,166 @@
+{
+  "generatedAt": "2026-08-04T18:51:35.254Z",
+  "scope": "NER-only (PERSON/ORG/ADDRESS via ner-eval-worker.ts, production nerPrompt) — regex layer measured separately by run-dataset-eval.mjs",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "port": "8788",
+  "limited": null,
+  "totals": {
+    "cases": 306,
+    "errors": 0,
+    "nerExpected": 461,
+    "nerFound": 460,
+    "nerRecallPct": 99.8,
+    "returned": 472,
+    "verbatim": 471,
+    "paraphrased": 1,
+    "falsePositives": 11
+  },
+  "latency": {
+    "avgMs": 851,
+    "p50Ms": 590,
+    "p95Ms": 2320,
+    "n": 306
+  },
+  "recallByType": {
+    "PERSON": {
+      "expected": 281,
+      "found": 281
+    },
+    "ADDRESS": {
+      "expected": 45,
+      "found": 45
+    },
+    "ORG": {
+      "expected": 135,
+      "found": 134
+    }
+  },
+  "falseNegatives": [
+    {
+      "caseId": "synthetic-090",
+      "domain": "legal",
+      "kind": "consulta",
+      "source": "synthetic",
+      "type": "ORG",
+      "value": "Cuatrecasas"
+    }
+  ],
+  "falsePositives": [
+    {
+      "caseId": "adversarial-030",
+      "domain": "legal",
+      "kind": "consulta",
+      "source": "adversarial",
+      "type": "ADDRESS",
+      "value": "la ciudad de León",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-032",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "Parroquia de Santa María",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-034",
+      "domain": "sanidad",
+      "kind": "informe-alta",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Teresa Moreno Gil",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "kind": "contrato",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Javier Ortega Blanco",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "kind": "contrato",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Beatriz Suárez Molina",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "kind": "contrato",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Ramón Gil Herrero",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-037",
+      "domain": "sanidad",
+      "kind": "interconsulta",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Julia Navarro Campos",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-037",
+      "domain": "sanidad",
+      "kind": "interconsulta",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "Hospital Clínico San Carlos",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-064",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "JUZGADO DE PRIMERA INSTANCIA",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-066",
+      "domain": "legal",
+      "kind": "contrato",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Cristina Vega Romero",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-121",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ADDRESS",
+      "value": "León capital",
+      "caseHadNerEntities": true
+    }
+  ],
+  "paraphrasedEntities": [
+    {
+      "caseId": "adversarial-030",
+      "type": "ORG",
+      "value": ""
+    }
+  ],
+  "errorsDetail": [],
+  "combined": {
+    "regexFound": 416,
+    "regexExpected": 459,
+    "nerFound": 460,
+    "nerExpected": 461,
+    "combinedFound": 876,
+    "combinedExpected": 920,
+    "combinedPct": 95.2
+  }
+}

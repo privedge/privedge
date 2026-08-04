@@ -10,7 +10,9 @@ const nerPrompt = (text: string) =>
 Format: {"entities":[{"type":"PERSON","value":"exact name as it appears"},{"type":"ORG","value":"exact org"}]}
 Rules:
 - PERSON: full names of people (patients, doctors, staff)
-- ORG: hospitals, clinics, insurers, companies
+- ORG: hospitals, clinics, insurers, companies, and Spanish judicial/institutional bodies with a specific identifying name — courts (e.g. "Juzgado de lo Social nº 3 de Valencia"), tribunals, audiencias provinciales, mutuas, notarías, registries
+- ORG excludes bar-association abbreviations (ICAM, ICAB, ICAV, and similar) — those are handled elsewhere, never extract them
+- ORG must be the specific named entity, not a generic category or department — exclude generic mentions with no identifying number/city/name (e.g. "el juzgado", "la organización"), and exclude hospital department/specialty names (e.g. "Cardiología", "Medicina Interna")
 - ADDRESS: street addresses
 - DO NOT include emails, phones, dates, IDs, passport numbers — only PERSON/ORG/ADDRESS
 - Values must appear verbatim in the text
