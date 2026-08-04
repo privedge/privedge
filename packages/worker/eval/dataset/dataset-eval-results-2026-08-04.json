@@ -1,0 +1,1312 @@
+{
+  "generatedAt": "2026-08-04T18:17:43.149Z",
+  "scope": "regex-only (detectPII/anonymize from src/pii.ts) — NER layer not evaluated here",
+  "totals": {
+    "cases": 306,
+    "synthetic": 105,
+    "adversarial": 201,
+    "entitiesInRegexScope": 459,
+    "entitiesNerScope": 461,
+    "recallFound": 416,
+    "recallExpected": 459,
+    "recallPct": 90.6,
+    "partiallyMatchedMisses": 10
+  },
+  "recallByType": {
+    "NHC": {
+      "expected": 46,
+      "found": 46
+    },
+    "DNI": {
+      "expected": 103,
+      "found": 101
+    },
+    "SSN_ES": {
+      "expected": 15,
+      "found": 15
+    },
+    "PHONE": {
+      "expected": 74,
+      "found": 71
+    },
+    "CARD_HEALTH": {
+      "expected": 15,
+      "found": 15
+    },
+    "LAWYER_ID": {
+      "expected": 30,
+      "found": 30
+    },
+    "NIG": {
+      "expected": 15,
+      "found": 15
+    },
+    "CIF": {
+      "expected": 15,
+      "found": 15
+    },
+    "IBAN": {
+      "expected": 38,
+      "found": 38
+    },
+    "CASE_ID": {
+      "expected": 15,
+      "found": 15
+    },
+    "DNI_MALFORMED": {
+      "expected": 32,
+      "found": 16
+    },
+    "NHC_UNCOVERED": {
+      "expected": 1,
+      "found": 1
+    },
+    "CIF_UNCOVERED": {
+      "expected": 6,
+      "found": 6
+    },
+    "CATASTRAL_UNCOVERED": {
+      "expected": 6,
+      "found": 6
+    },
+    "SSN_UNCOVERED": {
+      "expected": 1,
+      "found": 1
+    },
+    "NIG_UNCOVERED": {
+      "expected": 6,
+      "found": 5
+    },
+    "LAWYER_ID_UNCOVERED": {
+      "expected": 6,
+      "found": 6
+    },
+    "PERSON": {
+      "expected": 5,
+      "found": 0
+    },
+    "ORG": {
+      "expected": 1,
+      "found": 0
+    },
+    "IBAN_SPLIT_MIDGROUP": {
+      "expected": 1,
+      "found": 0
+    },
+    "PHONE_MALFORMED": {
+      "expected": 14,
+      "found": 0
+    },
+    "DNI_MALFORMED_DBLSPACE": {
+      "expected": 5,
+      "found": 5
+    },
+    "IBAN_MALFORMED": {
+      "expected": 5,
+      "found": 5
+    },
+    "CARD_MALFORMED": {
+      "expected": 4,
+      "found": 4
+    }
+  },
+  "precisionByType": {
+    "NHC": {
+      "tp": 46,
+      "fp": 0,
+      "pct": 100
+    },
+    "DNI": {
+      "tp": 101,
+      "fp": 2,
+      "pct": 98.1
+    },
+    "SSN_ES": {
+      "tp": 15,
+      "fp": 0,
+      "pct": 100
+    },
+    "PHONE": {
+      "tp": 71,
+      "fp": 2,
+      "pct": 97.3
+    },
+    "CARD_HEALTH": {
+      "tp": 15,
+      "fp": 0,
+      "pct": 100
+    },
+    "LAWYER_ID": {
+      "tp": 30,
+      "fp": 0,
+      "pct": 100
+    },
+    "NIG": {
+      "tp": 15,
+      "fp": 0,
+      "pct": 100
+    },
+    "CIF": {
+      "tp": 15,
+      "fp": 0,
+      "pct": 100
+    },
+    "IBAN": {
+      "tp": 38,
+      "fp": 1,
+      "pct": 97.4
+    },
+    "CASE_ID": {
+      "tp": 15,
+      "fp": 0,
+      "pct": 100
+    },
+    "DNI_MALFORMED": {
+      "tp": 16,
+      "fp": 0,
+      "pct": 100
+    },
+    "NHC_UNCOVERED": {
+      "tp": 1,
+      "fp": 0,
+      "pct": 100
+    },
+    "CIF_UNCOVERED": {
+      "tp": 6,
+      "fp": 0,
+      "pct": 100
+    },
+    "CATASTRAL_UNCOVERED": {
+      "tp": 6,
+      "fp": 0,
+      "pct": 100
+    },
+    "SSN_UNCOVERED": {
+      "tp": 1,
+      "fp": 0,
+      "pct": 100
+    },
+    "NIG_UNCOVERED": {
+      "tp": 5,
+      "fp": 0,
+      "pct": 100
+    },
+    "LAWYER_ID_UNCOVERED": {
+      "tp": 6,
+      "fp": 0,
+      "pct": 100
+    },
+    "PERSON": {
+      "tp": 0,
+      "fp": 0,
+      "pct": null
+    },
+    "ORG": {
+      "tp": 0,
+      "fp": 0,
+      "pct": null
+    },
+    "IBAN_SPLIT_MIDGROUP": {
+      "tp": 0,
+      "fp": 0,
+      "pct": null
+    },
+    "PHONE_MALFORMED": {
+      "tp": 0,
+      "fp": 0,
+      "pct": null
+    },
+    "DNI_MALFORMED_DBLSPACE": {
+      "tp": 5,
+      "fp": 0,
+      "pct": 100
+    },
+    "IBAN_MALFORMED": {
+      "tp": 5,
+      "fp": 0,
+      "pct": 100
+    },
+    "CARD_MALFORMED": {
+      "tp": 4,
+      "fp": 0,
+      "pct": 100
+    },
+    "DATE": {
+      "tp": 0,
+      "fp": 15,
+      "pct": 0
+    },
+    "ID": {
+      "tp": 0,
+      "fp": 2,
+      "pct": 0
+    },
+    "PASSPORT": {
+      "tp": 0,
+      "fp": 1,
+      "pct": 0
+    },
+    "SSN": {
+      "tp": 0,
+      "fp": 1,
+      "pct": 0
+    }
+  },
+  "recallBySource": {
+    "synthetic": {
+      "expected": 315,
+      "found": 315,
+      "pct": 100
+    },
+    "adversarial": {
+      "expected": 144,
+      "found": 101,
+      "pct": 70.1
+    }
+  },
+  "recallByDomain": {
+    "legal": {
+      "expected": 263,
+      "found": 242,
+      "pct": 92
+    },
+    "sanidad": {
+      "expected": 196,
+      "found": 174,
+      "pct": 88.8
+    }
+  },
+  "recallByDomainSource": {
+    "legal/synthetic": {
+      "expected": 180,
+      "found": 180,
+      "pct": 100
+    },
+    "legal/adversarial": {
+      "expected": 83,
+      "found": 62,
+      "pct": 74.7
+    },
+    "sanidad/synthetic": {
+      "expected": 135,
+      "found": 135,
+      "pct": 100
+    },
+    "sanidad/adversarial": {
+      "expected": 61,
+      "found": 39,
+      "pct": 63.9
+    }
+  },
+  "falseNegatives": [
+    {
+      "caseId": "adversarial-009",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "45678901a",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "NIF in lowercase check letter (45678901a) — the pattern requires [A-Z] uppercase only, so a lowercase letter breaks the match entirely."
+    },
+    {
+      "caseId": "adversarial-010",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "x1234567l",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "NIE with no separator and lowercase prefix (x1234567l) — pattern requires uppercase X/Y/Z, so lowercase breaks it."
+    },
+    {
+      "caseId": "adversarial-017",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "NIG_UNCOVERED",
+      "value": "28079 1 0234567/2025",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "NIG (número de identificación general de procedimiento judicial) — no pattern in production covers this structured judicial ID."
+    },
+    {
+      "caseId": "adversarial-035",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "DNI",
+      "value": "-Z",
+      "partiallyMatched": false,
+      "notes": "NIF broken across a line wrap (line ends right after the 8 digits, hyphen and check letter start the next line) — a naive extraction pipeline that reads line-by-line would split this; \\b\\d{8}[-\\s]?[A-Z]\\b technically still matches whitespace/newline as separator since \\s includes \\n, worth confirming empirically."
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Javier Ortega Blanco",
+      "partiallyMatched": false,
+      "notes": "List of multiple parties each with their own DNI, formatted as a numbered list — tests that overlap-resolution in detectPII() does not accidentally merge or skip adjacent entities across list items."
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Beatriz Suárez Molina",
+      "partiallyMatched": false,
+      "notes": "List of multiple parties each with their own DNI, formatted as a numbered list — tests that overlap-resolution in detectPII() does not accidentally merge or skip adjacent entities across list items."
+    },
+    {
+      "caseId": "adversarial-036",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Ramón Gil Herrero",
+      "partiallyMatched": false,
+      "notes": "List of multiple parties each with their own DNI, formatted as a numbered list — tests that overlap-resolution in detectPII() does not accidentally merge or skip adjacent entities across list items."
+    },
+    {
+      "caseId": "adversarial-037",
+      "domain": "sanidad",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Julia Navarro Campos",
+      "partiallyMatched": false,
+      "notes": "Expediente-style header block with field:value pairs stacked with no blank lines between them and inconsistent colon spacing — tests robustness against irregular whitespace immediately before the ID value."
+    },
+    {
+      "caseId": "adversarial-037",
+      "domain": "sanidad",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "Hospital Clínico San Carlos",
+      "partiallyMatched": false,
+      "notes": "Expediente-style header block with field:value pairs stacked with no blank lines between them and inconsistent colon spacing — tests robustness against irregular whitespace immediately before the ID value."
+    },
+    {
+      "caseId": "adversarial-038",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "IBAN_SPLIT_MIDGROUP",
+      "value": "0005 1332",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "IBAN split across two lines by a hard line-break in the middle of the digit groups (common when copy-pasting from a PDF) — the pattern requires \\s between groups but a newline mid-way through a 4-digit group itself (not between groups) will break the match; documented as expected miss."
+    },
+    {
+      "caseId": "adversarial-048",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE",
+      "value": "612 345678",
+      "expectedMatch": true,
+      "partiallyMatched": false,
+      "notes": "Mixed grouping (3-6) not in the pattern's explicit alternatives — pattern only defines 3-3-3, 3-2-2-2, 2-3-2-2 and contiguous; a 3-6 split falls between alternatives and should NOT match as a whole span (may partially match contiguous 6-digit remainder is not \\b-bounded though)."
+    },
+    {
+      "caseId": "adversarial-049",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE",
+      "value": "612345.678",
+      "expectedMatch": true,
+      "partiallyMatched": false,
+      "notes": "Dot used as sole separator mid-number, non-standard grouping — pattern separator class includes . so groups of 3+3 with a dot could still match depending on exact split; included to verify empirically rather than assume."
+    },
+    {
+      "caseId": "adversarial-051",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE",
+      "value": "612 34 5678",
+      "expectedMatch": true,
+      "partiallyMatched": false,
+      "notes": "Uneven grouping 3-2-4 not covered by any of the three grouped alternatives (only 3-3-3, 3-2-2-2, 2-3-2-2 exist) — expected miss as a WHOLE span."
+    },
+    {
+      "caseId": "adversarial-053",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "12345678-z",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Lowercase check letter — pattern requires [A-Z] uppercase only, breaks the match."
+    },
+    {
+      "caseId": "adversarial-054",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "x-1234567-l",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "NIE prefix separated from digits by a hyphen (X-1234567-L) — pattern requires prefix immediately adjacent to digits with no separator between letter and digit block, only between block and check letter; the leading hyphen after X breaks it, and lowercase compounds the miss."
+    },
+    {
+      "caseId": "adversarial-055",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "12345678",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "DNI number with the check letter omitted entirely — common when someone copies only the numeric part off a form. No letter means the pattern (which requires the trailing [A-Z]) cannot match at all."
+    },
+    {
+      "caseId": "adversarial-056",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "DNI: 12345678-Ñ",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Invalid check letter Ñ (not a real DNI letter, typo/OCR artifact) — since [A-Z] as a character class does not include Ñ in JS regex (it is outside the ASCII A-Z range), this breaks the match — different failure mode than a wrong-but-valid-range letter."
+    },
+    {
+      "caseId": "adversarial-065",
+      "domain": "sanidad",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "DNI",
+      "value": "12345678B",
+      "partiallyMatched": false,
+      "notes": "PII value immediately followed by punctuation with no space (DNI12345678Bseguido) — tests whether \\b word boundary correctly anchors even when the following character is a lowercase letter that would otherwise extend the match token."
+    },
+    {
+      "caseId": "adversarial-066",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "PERSON",
+      "value": "Cristina Vega Romero",
+      "partiallyMatched": false,
+      "notes": "Table with misaligned columns using tabs instead of consistent spacing — IBAN and phone in adjacent cells."
+    },
+    {
+      "caseId": "adversarial-081",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Z 2486311 Q",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-082",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "X 1000392 F",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-083",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "X 4933853 P",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-084",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Z 4277354 A",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-085",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "X 5370539 Q",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-086",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Z 5027635 R",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-087",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Y 5772199 H",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-088",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Z 2128900 W",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-089",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "X 5186818 L",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-090",
+      "domain": "legal",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "DNI_MALFORMED",
+      "value": "Y 9657398 B",
+      "expectedMatch": false,
+      "partiallyMatched": true,
+      "notes": "NIE with a space between the X/Y/Z prefix letter and the digit block (\"X 1234567 L\") — the pattern requires the prefix immediately adjacent to the digits (\\b[XYZ][0-9]{7}...), no separator allowed there, only before the trailing check letter. A space in that specific position breaks the match even though the format looks reasonable to a human."
+    },
+    {
+      "caseId": "adversarial-091",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "65343798",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-092",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "71202101",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-093",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "60517076",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-094",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "62266286",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-095",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "75309002",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-096",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "77471900",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-097",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "74805585",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-098",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "71831583",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with only 8 digits (one short of the required 9) — a common typo when transcribing by hand. None of the pattern alternatives match an 8-digit run bounded correctly, so this is an unambiguous miss, not a boundary case."
+    },
+    {
+      "caseId": "adversarial-099",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "7459519396",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    },
+    {
+      "caseId": "adversarial-100",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "6127031711",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    },
+    {
+      "caseId": "adversarial-101",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "6600874951",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    },
+    {
+      "caseId": "adversarial-102",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "6765179252",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    },
+    {
+      "caseId": "adversarial-103",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "7266637091",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    },
+    {
+      "caseId": "adversarial-104",
+      "domain": "sanidad",
+      "category": "malformed-format",
+      "source": "adversarial",
+      "type": "PHONE_MALFORMED",
+      "value": "7096041907",
+      "expectedMatch": false,
+      "partiallyMatched": false,
+      "notes": "Phone number with 10 digits (one extra, e.g. a doubled digit typo) — the trailing (?!\\d) negative lookahead means the pattern will still find a 9-digit substring UNLESS greedy alternation consumes differently; worth verifying which 9 digits (if any) get matched rather than assuming total failure."
+    }
+  ],
+  "falsePositives": [
+    {
+      "caseId": "synthetic-046",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "3/12/2022",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-047",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "14/3/2022",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-048",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "15/8/2025",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-049",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "16/1/2023",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-050",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "12/9/2022",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-051",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "26/6/2024",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-052",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "17/12/2024",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-053",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "24/9/2024",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-054",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "24/12/2022",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-055",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "4/3/2024",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-056",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "11/11/2023",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-057",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "3/1/2024",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-058",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "16/6/2022",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-059",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "6/11/2025",
+      "notes": null
+    },
+    {
+      "caseId": "synthetic-060",
+      "domain": "legal",
+      "category": null,
+      "source": "synthetic",
+      "type": "DATE",
+      "value": "27/1/2025",
+      "notes": null
+    },
+    {
+      "caseId": "adversarial-021",
+      "domain": "sanidad",
+      "category": "ambiguous",
+      "source": "adversarial",
+      "type": "DNI",
+      "value": "20481537Q",
+      "notes": "8-digit + letter sequence that LOOKS like a DNI shape but is a lab sample code, not an identifier of a person (it is prefixed and explicitly labeled as a sample ID, not a personal ID) — structurally the regex WILL match this since it cannot understand context, so we expect a false positive here. That is the point: measuring precision honestly."
+    },
+    {
+      "caseId": "adversarial-035",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "DNI",
+      "value": "12345678\n-Z",
+      "notes": "NIF broken across a line wrap (line ends right after the 8 digits, hyphen and check letter start the next line) — a naive extraction pipeline that reads line-by-line would split this; \\b\\d{8}[-\\s]?[A-Z]\\b technically still matches whitespace/newline as separator since \\s includes \\n, worth confirming empirically."
+    },
+    {
+      "caseId": "adversarial-038",
+      "domain": "legal",
+      "category": "noisy-context",
+      "source": "adversarial",
+      "type": "IBAN",
+      "value": "ES91 2100 0418 4502\n0005 1332",
+      "notes": "IBAN split across two lines by a hard line-break in the middle of the digit groups (common when copy-pasting from a PDF) — the pattern requires \\s between groups but a newline mid-way through a 4-digit group itself (not between groups) will break the match; documented as expected miss."
+    },
+    {
+      "caseId": "adversarial-045",
+      "domain": "sanidad",
+      "category": "negative",
+      "source": "adversarial",
+      "type": "ID",
+      "value": "EQ-4471",
+      "notes": "Equipment/device model numbers only (ECG machine model, catalog references) — alphanumeric codes that are NOT personal identifiers."
+    },
+    {
+      "caseId": "adversarial-046",
+      "domain": "legal",
+      "category": "negative",
+      "source": "adversarial",
+      "type": "ID",
+      "value": "PN-2024",
+      "notes": "Company-wide policy reference numbers and generic role titles — no individual named or identified."
+    },
+    {
+      "caseId": "adversarial-058",
+      "domain": "legal",
+      "category": "ambiguous",
+      "source": "adversarial",
+      "type": "PASSPORT",
+      "value": "AB-123456",
+      "notes": "a 2-letter + 6-digit code shaped like the PASSPORT pattern ([A-Z]{1,3}[-\\s]?\\d{6,9}) which explicitly EXCLUDES known prefixes (APP, BC, ID, BK, ACC, REF, TXN, ACCT, CASE, CLT) via negative lookahead — \"AB\" is not in that exclusion list, so this SHOULD still match PASSPORT structurally. Included to verify the exclusion list is not accidentally too broad or too narrow."
+    },
+    {
+      "caseId": "adversarial-111",
+      "domain": "legal",
+      "category": "ambiguous",
+      "source": "adversarial",
+      "type": "PHONE",
+      "value": "782910345",
+      "notes": "a 9-digit invoice number starting with \"7\" — falls inside the [6789] prefix class the PHONE pattern uses, so structurally it WILL match as if it were a mobile number even though it is an invoice sequence. This is an expected false positive to document, not a dataset error — the regex cannot know the semantic context."
+    },
+    {
+      "caseId": "adversarial-112",
+      "domain": "legal",
+      "category": "ambiguous",
+      "source": "adversarial",
+      "type": "PHONE",
+      "value": "823456712",
+      "notes": "a 9-digit equipment serial number starting with \"8\" — same [6789] prefix collision as above, different domain (sanidad-style device serial vs legal invoice), included to confirm the false positive is consistent across contexts rather than a fluke of one phrasing."
+    },
+    {
+      "caseId": "adversarial-114",
+      "domain": "sanidad",
+      "category": "ambiguous",
+      "source": "adversarial",
+      "type": "SSN",
+      "value": "978-84-9993",
+      "notes": "ISBN number — contains a 3-digit/2-digit/4-digit/3-digit/1-digit hyphenated shape that does not align with DNI, PHONE, CARD or IBAN group sizes; true negative for a very number-dense but non-personal string."
+    }
+  ],
+  "gapDocumentationMismatches": [
+    {
+      "caseId": "adversarial-008",
+      "type": "DNI_MALFORMED",
+      "value": "12.345.678-Z",
+      "notes": "NIF written with dots as thousand separators (12.345.678-Z) — a format real people use on paper forms. The regex has no `.` alternative in the separator class, so this should NOT match DNI. This is a genuine recall gap, not a trick."
+    },
+    {
+      "caseId": "adversarial-013",
+      "type": "NHC_UNCOVERED",
+      "value": "NHC 2024 8472",
+      "notes": "NHC written without the hyphen the NHC pattern requires (NHC 2024 8472 with spaces instead of hyphens) — the pii.ts pattern is /\\bMRN[-\\s]?\\d{4,}\\b/gi for MRN but there is NO dedicated NHC pattern in production at all (NHC is a Spanish-healthcare-specific ID the current regex set does not cover). This is a genuine coverage gap, independent of formatting."
+    },
+    {
+      "caseId": "adversarial-014",
+      "type": "CIF_UNCOVERED",
+      "value": "B12345678",
+      "notes": "CIF, no dedicated pattern exists in production (verified: PII_PATTERNS has no CIF-specific entry). CORRECTED after running the eval: this specific value is NOT a clean miss — it gets accidentally swallowed by the PASSPORT pattern (/\\b(?!(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#\\s]?\\d)[A-Z]{1,3}[-\\s]?\\d{6,9}\\b/g), since \"B\" is not in the excluded-prefix list and 1 letter + 8 digits fits \\d{6,9}. So anonymize() DOES replace it — but tags it PASSPORT, a wrong type, not CIF. Kept as expectedMatch:false because there is still no correct CIF-typed detection; documented here so the false \"gap\" isn't mistaken for a clean miss in the report."
+    },
+    {
+      "caseId": "adversarial-015",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "9872023VK6897S0001WX",
+      "notes": "Referencia catastral — production has zero pattern for this 20-character cadastral reference format at all. Explicit, isolated case per the task brief (this is THE headline example from public-es in scenarios.ts)."
+    },
+    {
+      "caseId": "adversarial-016",
+      "type": "SSN_UNCOVERED",
+      "value": "28 1234567890 15",
+      "notes": "Seguridad Social number — production has no dedicated pattern; a 12-digit-with-spaces SSN string like this could ACCIDENTALLY be partially caught by the CARD pattern (\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}) only if grouped in 4s, but the real SSN grouping (2-10-2) does not align — worth checking empirically rather than assuming."
+    },
+    {
+      "caseId": "adversarial-018",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAM nº 84213",
+      "notes": "Número de colegiado (bar association ID) — no pattern in production; this identifies a specific lawyer uniquely within their colegio."
+    },
+    {
+      "caseId": "adversarial-067",
+      "type": "DNI_MALFORMED",
+      "value": "92.449.181-Z",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-068",
+      "type": "DNI_MALFORMED",
+      "value": "37.741.518-J",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-069",
+      "type": "DNI_MALFORMED",
+      "value": "97.602.717-D",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-070",
+      "type": "DNI_MALFORMED",
+      "value": "73.283.208-X",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-071",
+      "type": "DNI_MALFORMED",
+      "value": "39.569.744-S",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-072",
+      "type": "DNI_MALFORMED",
+      "value": "72.195.437-R",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-073",
+      "type": "DNI_MALFORMED",
+      "value": "39.755.968-P",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-074",
+      "type": "DNI_MALFORMED",
+      "value": "60.757.430-D",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-075",
+      "type": "DNI_MALFORMED",
+      "value": "18.337.420-A",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-076",
+      "type": "DNI_MALFORMED",
+      "value": "85.548.099-J",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-077",
+      "type": "DNI_MALFORMED",
+      "value": "51.877.594-J",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-078",
+      "type": "DNI_MALFORMED",
+      "value": "10.664.391-G",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-079",
+      "type": "DNI_MALFORMED",
+      "value": "50.329.171-L",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-080",
+      "type": "DNI_MALFORMED",
+      "value": "67.794.104-V",
+      "notes": "NIF with dot separators between digit groups (dotted thousands, e.g. 12.345.678-Z) — a format Spanish forms and older paper documents commonly print. The DNI pattern separator class is [-\\s]? only (hyphen or single space), no dot alternative, so this is a genuine and repeatable recall gap, not an isolated edge case."
+    },
+    {
+      "caseId": "adversarial-155",
+      "type": "CIF_UNCOVERED",
+      "value": "A3487472H",
+      "notes": "Company tax ID (CIF) — production regex has no CIF pattern whatsoever (only the combined DNI/NIE pattern exists for individuals). Every CIF in this dataset is therefore an unconditional miss regardless of formatting; included multiple times with different org-type letters to make the gap unambiguous across variations."
+    },
+    {
+      "caseId": "adversarial-156",
+      "type": "CIF_UNCOVERED",
+      "value": "A2299962H",
+      "notes": "Company tax ID (CIF) — production regex has no CIF pattern whatsoever (only the combined DNI/NIE pattern exists for individuals). Every CIF in this dataset is therefore an unconditional miss regardless of formatting; included multiple times with different org-type letters to make the gap unambiguous across variations."
+    },
+    {
+      "caseId": "adversarial-157",
+      "type": "CIF_UNCOVERED",
+      "value": "P8040092H",
+      "notes": "Company tax ID (CIF) — production regex has no CIF pattern whatsoever (only the combined DNI/NIE pattern exists for individuals). Every CIF in this dataset is therefore an unconditional miss regardless of formatting; included multiple times with different org-type letters to make the gap unambiguous across variations."
+    },
+    {
+      "caseId": "adversarial-158",
+      "type": "CIF_UNCOVERED",
+      "value": "A2251033G",
+      "notes": "Company tax ID (CIF) — production regex has no CIF pattern whatsoever (only the combined DNI/NIE pattern exists for individuals). Every CIF in this dataset is therefore an unconditional miss regardless of formatting; included multiple times with different org-type letters to make the gap unambiguous across variations."
+    },
+    {
+      "caseId": "adversarial-159",
+      "type": "CIF_UNCOVERED",
+      "value": "B1510473G",
+      "notes": "Company tax ID (CIF) — production regex has no CIF pattern whatsoever (only the combined DNI/NIE pattern exists for individuals). Every CIF in this dataset is therefore an unconditional miss regardless of formatting; included multiple times with different org-type letters to make the gap unambiguous across variations."
+    },
+    {
+      "caseId": "adversarial-160",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "8314066UO24180337O",
+      "notes": "Cadastral reference — 20-char alphanumeric format with zero coverage in production. This is the exact entity type called out in the task brief (the public-es scenario ground truth omits it). Included repeatedly because it is the headline finding, not a footnote."
+    },
+    {
+      "caseId": "adversarial-161",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "4591735PS305874HVH",
+      "notes": "Cadastral reference — 20-char alphanumeric format with zero coverage in production. This is the exact entity type called out in the task brief (the public-es scenario ground truth omits it). Included repeatedly because it is the headline finding, not a footnote."
+    },
+    {
+      "caseId": "adversarial-162",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "8952299YP55442E343",
+      "notes": "Cadastral reference — 20-char alphanumeric format with zero coverage in production. This is the exact entity type called out in the task brief (the public-es scenario ground truth omits it). Included repeatedly because it is the headline finding, not a footnote."
+    },
+    {
+      "caseId": "adversarial-163",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "1130622FQ67339X7GU",
+      "notes": "Cadastral reference — 20-char alphanumeric format with zero coverage in production. This is the exact entity type called out in the task brief (the public-es scenario ground truth omits it). Included repeatedly because it is the headline finding, not a footnote."
+    },
+    {
+      "caseId": "adversarial-164",
+      "type": "CATASTRAL_UNCOVERED",
+      "value": "8738913WH02645448C",
+      "notes": "Cadastral reference — 20-char alphanumeric format with zero coverage in production. This is the exact entity type called out in the task brief (the public-es scenario ground truth omits it). Included repeatedly because it is the headline finding, not a footnote."
+    },
+    {
+      "caseId": "adversarial-165",
+      "type": "NIG_UNCOVERED",
+      "value": "190746 C 256289/2023",
+      "notes": "Judicial case NIG — structured court-procedure identifier, no pattern in production covers this shape at all."
+    },
+    {
+      "caseId": "adversarial-166",
+      "type": "NIG_UNCOVERED",
+      "value": "080198 S 298536/2020",
+      "notes": "Judicial case NIG — structured court-procedure identifier, no pattern in production covers this shape at all."
+    },
+    {
+      "caseId": "adversarial-167",
+      "type": "NIG_UNCOVERED",
+      "value": "040925 C 877740/2026",
+      "notes": "Judicial case NIG — structured court-procedure identifier, no pattern in production covers this shape at all."
+    },
+    {
+      "caseId": "adversarial-168",
+      "type": "NIG_UNCOVERED",
+      "value": "180747 P 783735/2026",
+      "notes": "Judicial case NIG — structured court-procedure identifier, no pattern in production covers this shape at all."
+    },
+    {
+      "caseId": "adversarial-169",
+      "type": "NIG_UNCOVERED",
+      "value": "460275 S 797936/2024",
+      "notes": "Judicial case NIG — structured court-procedure identifier, no pattern in production covers this shape at all."
+    },
+    {
+      "caseId": "adversarial-170",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAM nº 54730",
+      "notes": "Bar association membership number — uniquely identifies a specific lawyer, zero pattern coverage in production."
+    },
+    {
+      "caseId": "adversarial-171",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAM nº 37052",
+      "notes": "Bar association membership number — uniquely identifies a specific lawyer, zero pattern coverage in production."
+    },
+    {
+      "caseId": "adversarial-172",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAM nº 27415",
+      "notes": "Bar association membership number — uniquely identifies a specific lawyer, zero pattern coverage in production."
+    },
+    {
+      "caseId": "adversarial-173",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAS nº 74361",
+      "notes": "Bar association membership number — uniquely identifies a specific lawyer, zero pattern coverage in production."
+    },
+    {
+      "caseId": "adversarial-174",
+      "type": "LAWYER_ID_UNCOVERED",
+      "value": "ICAS nº 90383",
+      "notes": "Bar association membership number — uniquely identifies a specific lawyer, zero pattern coverage in production."
+    },
+    {
+      "caseId": "adversarial-183",
+      "type": "DNI_MALFORMED_DBLSPACE",
+      "value": "Y1560293  X",
+      "notes": "PII value split by a soft-wrap-induced double space (common artifact of copy-pasting justified text from a PDF) — tests whether an unexpected double space inside the separator position still falls within the [-\\s]? single-character class (it should NOT, since the class matches exactly one character)."
+    },
+    {
+      "caseId": "adversarial-184",
+      "type": "DNI_MALFORMED_DBLSPACE",
+      "value": "Z1085196  S",
+      "notes": "PII value split by a soft-wrap-induced double space (common artifact of copy-pasting justified text from a PDF) — tests whether an unexpected double space inside the separator position still falls within the [-\\s]? single-character class (it should NOT, since the class matches exactly one character)."
+    },
+    {
+      "caseId": "adversarial-185",
+      "type": "DNI_MALFORMED_DBLSPACE",
+      "value": "X1612671  A",
+      "notes": "PII value split by a soft-wrap-induced double space (common artifact of copy-pasting justified text from a PDF) — tests whether an unexpected double space inside the separator position still falls within the [-\\s]? single-character class (it should NOT, since the class matches exactly one character)."
+    },
+    {
+      "caseId": "adversarial-186",
+      "type": "DNI_MALFORMED_DBLSPACE",
+      "value": "X3785029  B",
+      "notes": "PII value split by a soft-wrap-induced double space (common artifact of copy-pasting justified text from a PDF) — tests whether an unexpected double space inside the separator position still falls within the [-\\s]? single-character class (it should NOT, since the class matches exactly one character)."
+    },
+    {
+      "caseId": "adversarial-187",
+      "type": "DNI_MALFORMED_DBLSPACE",
+      "value": "Z5276647  S",
+      "notes": "PII value split by a soft-wrap-induced double space (common artifact of copy-pasting justified text from a PDF) — tests whether an unexpected double space inside the separator position still falls within the [-\\s]? single-character class (it should NOT, since the class matches exactly one character)."
+    },
+    {
+      "caseId": "adversarial-193",
+      "type": "IBAN_MALFORMED",
+      "value": "ES84-6791-9102-6868-1954-8269",
+      "notes": "IBAN with hyphens instead of spaces between groups (ES91-2100-0418-4502-0005-1332) — the pattern separator is [\\s]? only (whitespace, optional), no hyphen alternative for IBAN specifically (unlike DNI/PHONE which do allow hyphens). This is a real format gap: people who are used to hyphenated card/ID formats sometimes apply the same convention to IBANs."
+    },
+    {
+      "caseId": "adversarial-194",
+      "type": "IBAN_MALFORMED",
+      "value": "ES91-2230-5233-7955-4736-7363",
+      "notes": "IBAN with hyphens instead of spaces between groups (ES91-2100-0418-4502-0005-1332) — the pattern separator is [\\s]? only (whitespace, optional), no hyphen alternative for IBAN specifically (unlike DNI/PHONE which do allow hyphens). This is a real format gap: people who are used to hyphenated card/ID formats sometimes apply the same convention to IBANs."
+    },
+    {
+      "caseId": "adversarial-195",
+      "type": "IBAN_MALFORMED",
+      "value": "ES97-6431-3884-1219-6314-6366",
+      "notes": "IBAN with hyphens instead of spaces between groups (ES91-2100-0418-4502-0005-1332) — the pattern separator is [\\s]? only (whitespace, optional), no hyphen alternative for IBAN specifically (unlike DNI/PHONE which do allow hyphens). This is a real format gap: people who are used to hyphenated card/ID formats sometimes apply the same convention to IBANs."
+    },
+    {
+      "caseId": "adversarial-196",
+      "type": "IBAN_MALFORMED",
+      "value": "ES23-5936-5055-7135-4666-8889",
+      "notes": "IBAN with hyphens instead of spaces between groups (ES91-2100-0418-4502-0005-1332) — the pattern separator is [\\s]? only (whitespace, optional), no hyphen alternative for IBAN specifically (unlike DNI/PHONE which do allow hyphens). This is a real format gap: people who are used to hyphenated card/ID formats sometimes apply the same convention to IBANs."
+    },
+    {
+      "caseId": "adversarial-197",
+      "type": "IBAN_MALFORMED",
+      "value": "ES12-8392-9568-4792-5759-9999",
+      "notes": "IBAN with hyphens instead of spaces between groups (ES91-2100-0418-4502-0005-1332) — the pattern separator is [\\s]? only (whitespace, optional), no hyphen alternative for IBAN specifically (unlike DNI/PHONE which do allow hyphens). This is a real format gap: people who are used to hyphenated card/ID formats sometimes apply the same convention to IBANs."
+    },
+    {
+      "caseId": "adversarial-198",
+      "type": "CARD_MALFORMED",
+      "value": "8893.4772.3375.4503",
+      "notes": "Payment/insurance card number with dots instead of spaces or hyphens between the 4-digit groups (1234.5678.9012.3456) — CARD pattern separator class is [\\s-]? only, no dot alternative, so this is a genuine miss."
+    },
+    {
+      "caseId": "adversarial-199",
+      "type": "CARD_MALFORMED",
+      "value": "9894.5265.7675.5180",
+      "notes": "Payment/insurance card number with dots instead of spaces or hyphens between the 4-digit groups (1234.5678.9012.3456) — CARD pattern separator class is [\\s-]? only, no dot alternative, so this is a genuine miss."
+    },
+    {
+      "caseId": "adversarial-200",
+      "type": "CARD_MALFORMED",
+      "value": "4685.2587.1295.1467",
+      "notes": "Payment/insurance card number with dots instead of spaces or hyphens between the 4-digit groups (1234.5678.9012.3456) — CARD pattern separator class is [\\s-]? only, no dot alternative, so this is a genuine miss."
+    },
+    {
+      "caseId": "adversarial-201",
+      "type": "CARD_MALFORMED",
+      "value": "2819.8242.7676.7930",
+      "notes": "Payment/insurance card number with dots instead of spaces or hyphens between the 4-digit groups (1234.5678.9012.3456) — CARD pattern separator class is [\\s-]? only, no dot alternative, so this is a genuine miss."
+    }
+  ]
+}
