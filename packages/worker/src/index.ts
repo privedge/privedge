@@ -157,7 +157,7 @@ export default {
       const secrets = detectSecrets(text)
       const nerResult = isPaidTier
         ? await detectPIINERCached(text, env.AI, env.PRIVEDGE_KEYS)
-        : { detected: false, entities: [] as NerEntity[] }
+        : { detected: false, entities: [] as NerEntity[], error: undefined as boolean | undefined }
 
       const nerEntities: NerEntity[] = nerResult.entities
       const { messages: sanitizedMessages } = anonymize(messages, nerEntities)
@@ -178,6 +178,11 @@ export default {
           has_secret: secrets.detected,
           sanitized_messages: sanitizedMessages,
           ner_ran: isPaidTier,
+          // Inspection endpoint, not an egress path — no 503 here. But if NER failed we
+          // must say so explicitly: otherwise the caller reads "no entities" as "prompt is
+          // clean" when it may just mean detection never ran. See nerResult.error fail-safe
+          // in the main /v1/chat/completions handler for the egress-blocking counterpart.
+          ...(nerResult.error ? { ner_error: true } : {}),
         },
         { headers: CORS },
       )
@@ -222,7 +227,7 @@ export default {
     const nerNeeded = isPaidTier
     const nerResult = nerNeeded
       ? await detectPIINERCached(prompt, env.AI, env.PRIVEDGE_KEYS)
-      : { detected: false, entities: [] }
+      : { detected: false, entities: [] as NerEntity[], error: undefined as boolean | undefined }
 
     const nerEntities: NerEntity[] = nerResult.entities
     const detected = regexResult.detected || nerResult.detected
@@ -230,6 +235,42 @@ export default {
     piiMatches = regexResult.matches + nerEntities.length
 
     if (secrets.detected) piiTypes = [...piiTypes, 'SECRET']
+
+    // Fail-safe: if NER failed (Workers AI timeout, malformed JSON, rate limit), we cannot
+    // trust `nerResult.detected === false` as "no names/orgs/addresses" — it may just mean
+    // NER never ran. Regex alone doesn't catch names, so a pass-through here could leak raw
+    // PII to the cloud provider. Compliance rule: fail toward the safe side, always.
+    //   - 'edge' strategy: PII (if any) never leaves Cloudflare regardless of what NER found,
+    //     so a NER failure doesn't compromise anything — let it fall through to the edge path.
+    //   - 'anonymize' strategy: we cannot guarantee the prompt is clean, so fail closed (503)
+    //     instead of silently degrading to regex-only and breaking the "cloud never sees PII"
+    //     guarantee the client contracted for.
+    if (nerResult.error && piiStrategy === 'anonymize') {
+      piiTypes = [...new Set([...piiTypes, 'NER_ERROR'])]
+      const latencyMs = Date.now() - start
+      ctx.waitUntil(writeLog(env, {
+        keyData,
+        anonymized: false,
+        piiTypes,
+        hasSecret: secrets.detected,
+        piiMatches,
+        tokensIn: null,
+        tokensOut: null,
+        latencyMs,
+        statusCode: 503,
+        piiStrategy,
+        providerMode: keyData.provider_mode ?? 'managed',
+        provider: keyData.provider ?? 'openai',
+        cfNode,
+        requestCountry,
+        requestCity,
+      }))
+      return authError(
+        'PII detection (NER) is temporarily unavailable, so anonymization cannot be guaranteed for this request. Retry shortly.',
+        503,
+        { code: 'ner_unavailable' },
+      )
+    }
 
     const hasAnything = detected || secrets.detected
 

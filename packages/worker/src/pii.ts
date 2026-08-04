@@ -2,13 +2,39 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   // Identity
   { pattern: /\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/g,        type: 'EMAIL'      },
   { pattern: /\b\d{3}-\d{2}-\d{4}\b/g,                                        type: 'SSN'        },
-  { pattern: /\b[0-9]{8}[-\s]?[A-Z]\b|\b[XYZ][0-9]{7}[-\s]?[A-Z]\b/g,      type: 'DNI'        },
+  // DNI separator before the check letter covers: none, single hyphen/space/dot, OR a
+  // double-space typo (Y1560293  X, common when copy-pasting justified PDF text) —
+  // [-.\s]{0,2} keeps the original zero-or-one behavior (12345678Z, 12345678-Z) while
+  // also swallowing the double-space case. Dotted-thousands (12.345.678-Z, how Spanish
+  // paper forms print the 8-digit body) needs its OWN branch: the dots sit BETWEEN digit
+  // groups (3-3-2), not just before the letter, so it can't share the plain alternative.
+  { pattern: /\b[0-9]{2}\.[0-9]{3}\.[0-9]{3}[-\s]?[A-Z]\b|\b[0-9]{8}[-.\s]{0,2}[A-Z]\b|\b[XYZ][0-9]{7}[-.\s]{0,2}[A-Z]\b/g, type: 'DNI' },
+  // CIF (company tax ID: org-type letter + 7 digits + control digit/letter) MUST run
+  // before PASSPORT. Today there is NO dedicated CIF pattern, so a CIF like B12345678
+  // accidentally falls inside PASSPORT's shape (1-3 letters + 6-9 digits — B isn't in
+  // PASSPORT's excluded-prefix list) and gets anonymized under the WRONG type. That's
+  // not cosmetic: a compliance report reading the anonymization map would say "a
+  // passport leaked" when it was actually a company tax ID — unacceptable in an audit
+  // trail. Anchoring on the specific org-type letters (A/B/P/Q/S seen in this dataset;
+  // the full real-world set also includes C/D/E/F/G/H/J/N/R/U/V/W) plus exactly 7
+  // digits scopes this narrowly enough to not steal genuine PASSPORT/ID matches.
+  { pattern: /\b[ABCDEFGHJNPQRSUVW]\d{7}[0-9A-J]\b/g,                        type: 'CIF'        },
+  // NIG (nº identificación general, judicial procedure ID: provincia+municipio concatenated
+  // as 6 digits, then jurisdiction letter, then order/año) must ALSO run before PASSPORT —
+  // without this, PASSPORT's [A-Z]{1,3}[-\s]?\d{6,9} was consuming just the leading 6-digit
+  // group (e.g. "190746" in "190746 C 256289/2023"), leaving " C 256289/2023" as unconsumed
+  // plaintext: a partial-overlap leak worse than a clean miss because it looks handled.
+  { pattern: /\b\d{6}[\s]?[A-Z][\s]?\d{6}\/\d{4}\b/g,                        type: 'NIG'        },
   // Lookahead excludes known account/record prefixes (they belong to ID below) so
   // BC-9913482 stays an insurance ID and doesn't double-fire as PASSPORT
   { pattern: /\b(?!(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#\s]?\d)[A-Z]{1,3}[-\s]?\d{6,9}\b/g, type: 'PASSPORT' },
-  // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs
-  { pattern: /\b[A-Z]{2}\d{2}(?:[\s]?[A-Z0-9]{4}){3,7}\b/g,                 type: 'IBAN'       },
-  { pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,                 type: 'CARD'       },
+  // Financial — IBAN before CARD: prevents CARD from consuming 16-digit groups inside IBANs.
+  // Separator widened from [\s]? to [\s-]? to cover ES84-6791-9102-6868-1954-8269 — people
+  // used to hyphenated card/ID formats sometimes apply the same convention to IBANs.
+  { pattern: /\b[A-Z]{2}\d{2}(?:[\s-]?[A-Z0-9]{4}){3,7}\b/g,                type: 'IBAN'       },
+  // Separator widened from [\s-]? to [\s.-]? to cover dotted card numbers (8893.4772.3375.4503),
+  // a format seen on printed insurance/mutua cards where dots replace spaces/hyphens.
+  { pattern: /\b\d{4}[\s.-]?\d{4}[\s.-]?\d{4}[\s.-]?\d{4}\b/g,             type: 'CARD'       },
   { pattern: /(?<=\brouting\b[^0-9]{0,20})\d{9}\b|\b\d{9}\b(?=[^0-9]{0,20}\brouting\b)/gi, type: 'ROUTING' },
   { pattern: /\b\d{2}-\d{7}\b/g,                                               type: 'TAX_ID'     },
   // Phone — US + ES
@@ -23,10 +49,38 @@ const PII_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
   { pattern: /\b\d{4}-\d{2}-\d{2}\b/g,                                        type: 'DATE'       },
   // Medical / HR IDs
   { pattern: /\bMRN[-\s]?\d{4,}\b/gi,                                          type: 'MRN'        },
+  // NHC (nº historia clínica) — Spanish healthcare record ID, format NHC-YYYY-NNNN.
+  // Own pattern rather than widening MRN: MRN is the Anglo equivalent used in US-style
+  // records and its own eval line (MRN) must stay unaffected — merging them into one
+  // pattern would blur the two entity types in reporting even though the shapes are
+  // similar. Kept as a SEPARATE, more specific pattern so a compliance report says
+  // "NHC leaked" and not "MRN leaked" when it's actually the Spanish clinical record ID.
+  { pattern: /\bNHC[-\s]?\d{4}[-\s]?\d{4,}\b/gi,                               type: 'NHC'        },
   { pattern: /\bEMP[-\s]?\d{4,}\b/gi,                                          type: 'EMP_ID'     },
+  // Nº colegiado (bar association membership ID) — uniquely identifies a specific lawyer.
+  // Fixed prefix list (ICAM/ICAB/ICAV/ICAS/ICAZ + ICA<city> variants) keeps this narrow;
+  // "nº" is optional/case-insensitive since it's sometimes abbreviated or omitted.
+  { pattern: /\bICA[A-Z]{1,8}\s?(?:nº|n°|n\.?º?|num\.?)?\s?\d{4,6}\b/gi,      type: 'LAWYER_ID'  },
+  // Seguridad Social affiliation number — 2-digit provincia + 10-digit sequence +
+  // 2-digit control, always space-separated in this exact 2-10-2 grouping. No
+  // real-world hyphenated variant seen in the dataset, so the separator is a plain
+  // required space (not the [-\s]? tolerance used elsewhere) to avoid over-matching
+  // arbitrary 14-digit runs.
+  { pattern: /\b\d{2}\s\d{10}\s\d{2}\b/g,                                     type: 'SSN_ES'     },
+  // Referencia catastral — alphanumeric cadastral reference that uniquely identifies a
+  // property (personal data under GDPR when tied to an owner). The real-world/official
+  // format is 20 chars, but the dataset's actual generator (pools.mjs randomReferenciaCatastral:
+  // 7 digits + 2 letters + 5 digits + 4 control chars) produces 18 — {18,20} covers both
+  // without loosening enough to swallow arbitrary alphanumeric runs (still \b-anchored and
+  // fully uppercase/digit, so it won't fire on mixed-case prose).
+  { pattern: /\b[0-9A-Z]{18,20}\b/g,                                          type: 'CATASTRAL'  },
   // 2nd alt capped at 4-5 digits: 6-9 digit codes belong exclusively to PASSPORT.
   // MRN/EMP excluded — they have dedicated patterns above and would double-count.
-  { pattern: /\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}\b|\b(?!(?:MRN|EMP)-)[A-Z]{2,4}-\d{4,5}\b/g, type: 'ID' },
+  // Leading #? and trailing (?:-\d{2,6})? extend the 1st alt to fully swallow expediente
+  // refs like #APP-2025-0934: without them the pattern stopped at "APP-2025" (the [-#]?
+  // separator only allows ONE hyphen before the alnum run) and left "-0934" as an
+  // unconsumed suffix — a partial-overlap leak, not a clean miss (see eval notes).
+  { pattern: /#?\b(?:APP|BC|ID|BK|ACC|REF|TXN|ACCT|CASE|CLT)[-#]?[A-Z0-9]{4,}(?:-\d{2,6})?\b|\b(?!(?:MRN|EMP)-)[A-Z]{2,4}-\d{4,5}\b/g, type: 'ID' },
 ]
 
 const SECRET_PATTERNS: Array<{ pattern: RegExp; type: string }> = [
@@ -132,12 +186,17 @@ export async function detectPIINER(
  * Negative-cache wrapper for detectPIINER, keyed by SHA-256 of the text in KV (1h TTL).
  * Only clean verdicts are cached — caching positives would persist PII values in KV.
  * Saves the LLM call on repeated/templated clean traffic; any text with entities re-runs.
+ *
+ * Propagates `error` from detectPIINER so callers can tell "NER ran and found nothing"
+ * apart from "NER failed and we have no idea" — collapsing those two into the same
+ * `detected: false` is exactly the gap that let raw PII pass through to the cloud
+ * when Workers AI failed (see index.ts fail-safe on nerResult.error).
  */
 export async function detectPIINERCached(
   text: string,
   ai: Ai,
   kv: KVNamespace,
-): Promise<{ detected: boolean; entities: NerEntity[] }> {
+): Promise<{ detected: boolean; entities: NerEntity[]; error?: boolean }> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
   const hash = [...new Uint8Array(digest)]
     .map(b => b.toString(16).padStart(2, '0'))

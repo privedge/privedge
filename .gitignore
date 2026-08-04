@@ -4,3 +4,7 @@ dist/
 .dev.vars
 *.env
 .md/
+
+# Compiled output is never versioned: wrangler deploys src/index.ts directly.
+# Versioning these produces stale, divergent snapshots of the real source.
+packages/*/src/**/*.js
