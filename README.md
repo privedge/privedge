@@ -145,13 +145,13 @@ NER never calls an external API: it runs on the same Cloudflare node that receiv
 
 ### Measured recall
 
-Against an independent evaluation set — 306 Spanish legal and healthcare documents, 920 labelled entities, generated separately from the detector it measures:
+Against an independent evaluation set — 306 Spanish legal and healthcare documents, 921 labelled entities, generated separately from the detector it measures:
 
 | Layer | Recall |
 |-------|--------|
-| Regex | 90.6% (416/459) |
-| NER | 99.8% (460/461) |
-| **Combined** | **95.2% (876/920)** |
+| Regex | 92.3% (418/453) |
+| NER | 100% (468/468) |
+| **Combined** | **96.2% (886/921)** |
 
 The dataset and runners live in [`packages/worker/eval/dataset`](./packages/worker/eval/dataset), including the known gaps. These are synthetic documents: independent of the detector, but not a substitute for validation against real customer data.
 
