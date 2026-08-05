@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "privedge"
-version = "0.1.0"
+version = "1.0.0"
 description = "Privacy on the edge — drop-in AI proxy client with automatic PII routing"
 readme = "README.md"
 # PEP 639: an SPDX string, not the deprecated { text = ... } table.
