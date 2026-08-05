@@ -34,8 +34,8 @@ class _ChatCompletions:
     def create(
         self,
         *,
-        model: str,
         messages: List[Message],
+        model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         pii_strategy: Optional[PiiStrategy] = None,
@@ -49,9 +49,18 @@ class _ChatCompletions:
         `ChatCompletionResponse` for what each response field means.
 
         Args:
-            model: Model identifier forwarded to the configured provider
-                (e.g. ``"gpt-5.4-nano"``, ``"claude-opus-4-6"``).
             messages: Conversation so far, OpenAI-compatible shape.
+            model: Model identifier forwarded to the configured provider
+                (e.g. ``"gpt-5.4-nano"``, ``"claude-opus-4-6"``). Optional:
+                when omitted (``None``), the worker falls back to the
+                ``cloud_model`` configured on the API key. Passing it here
+                always wins over the key's default, which keeps this a
+                drop-in OpenAI replacement and is the only way to choose a
+                model on a self-hosted deployment, where there is no
+                dashboard to configure one. When ``None``, the ``model`` key
+                is omitted from the request body entirely (never sent as
+                ``null``) — the worker only honors a request-supplied model
+                when ``typeof body.model === "string"``.
             temperature: Optional sampling temperature, forwarded as-is.
             max_tokens: Optional max output tokens, forwarded as-is. The
                 worker renames this to ``max_completion_tokens`` internally
@@ -81,7 +90,9 @@ class _ChatCompletions:
             a single `Response.json(...)` after the full upstream response is
             read, so there is nothing to stream.
         """
-        payload: Dict[str, Any] = {"model": model, "messages": messages}
+        payload: Dict[str, Any] = {"messages": messages}
+        if model is not None:
+            payload["model"] = model
         if temperature is not None:
             payload["temperature"] = temperature
         if max_tokens is not None:

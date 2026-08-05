@@ -28,8 +28,8 @@ class _AsyncChatCompletions:
     async def create(
         self,
         *,
-        model: str,
         messages: List[Message],
+        model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         pii_strategy: Optional[PiiStrategy] = None,
@@ -37,9 +37,14 @@ class _AsyncChatCompletions:
         """Async counterpart of `privedge.client.Privedge.chat.completions.create`.
 
         See that method's docstring for full parameter and error semantics —
-        identical here, only awaited.
+        identical here, only awaited. In short: ``model`` is optional — when
+        omitted (``None``), the worker falls back to the API key's
+        configured ``cloud_model``; passing it always wins, and the
+        ``model`` key is never sent (not even as ``null``) when omitted.
         """
-        payload: Dict[str, Any] = {"model": model, "messages": messages}
+        payload: Dict[str, Any] = {"messages": messages}
+        if model is not None:
+            payload["model"] = model
         if temperature is not None:
             payload["temperature"] = temperature
         if max_tokens is not None:

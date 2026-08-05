@@ -421,3 +421,66 @@ class TestRequestConstruction:
         with Privedge(api_key=API_KEY, worker_url=WORKER_URL + "/") as client:
             client.chat.completions.create(model="gpt-5.4-nano", messages=[{"role": "user", "content": "hi"}])
         assert route.called
+
+    @respx.mock
+    def test_model_omitted_is_not_sent_in_body(self):
+        """Omitting `model` must not send `model: null` — the worker only
+        falls back to the key's `cloud_model` when the field is absent
+        entirely (`typeof body.model === 'string'` check)."""
+        route = respx.post(_chat_url()).mock(
+            return_value=httpx.Response(200, json=_success_body())
+        )
+        with Privedge(api_key=API_KEY, worker_url=WORKER_URL) as client:
+            client.chat.completions.create(messages=[{"role": "user", "content": "hi"}])
+
+        import json
+
+        sent_body = json.loads(route.calls.last.request.content)
+        assert "model" not in sent_body
+
+    @respx.mock
+    def test_model_passed_is_sent_in_body(self):
+        route = respx.post(_chat_url()).mock(
+            return_value=httpx.Response(200, json=_success_body())
+        )
+        with Privedge(api_key=API_KEY, worker_url=WORKER_URL) as client:
+            client.chat.completions.create(
+                model="gpt-5.4-nano", messages=[{"role": "user", "content": "hi"}]
+            )
+
+        import json
+
+        sent_body = json.loads(route.calls.last.request.content)
+        assert sent_body["model"] == "gpt-5.4-nano"
+
+
+class TestAsyncRequestConstruction:
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_async_model_omitted_is_not_sent_in_body(self):
+        route = respx.post(_chat_url()).mock(
+            return_value=httpx.Response(200, json=_success_body())
+        )
+        async with AsyncPrivedge(api_key=API_KEY, worker_url=WORKER_URL) as client:
+            await client.chat.completions.create(messages=[{"role": "user", "content": "hi"}])
+
+        import json
+
+        sent_body = json.loads(route.calls.last.request.content)
+        assert "model" not in sent_body
+
+    @respx.mock
+    @pytest.mark.asyncio
+    async def test_async_model_passed_is_sent_in_body(self):
+        route = respx.post(_chat_url()).mock(
+            return_value=httpx.Response(200, json=_success_body())
+        )
+        async with AsyncPrivedge(api_key=API_KEY, worker_url=WORKER_URL) as client:
+            await client.chat.completions.create(
+                model="gpt-5.4-nano", messages=[{"role": "user", "content": "hi"}]
+            )
+
+        import json
+
+        sent_body = json.loads(route.calls.last.request.content)
+        assert sent_body["model"] == "gpt-5.4-nano"

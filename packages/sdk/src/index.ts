@@ -9,7 +9,13 @@ export interface Message {
 }
 
 export interface ChatCompletionParams {
-  model: string
+  /**
+   * Cloud model id. Optional: when omitted, the proxy falls back to the `cloud_model`
+   * configured on the API key. Passing it here always wins, which keeps this a drop-in
+   * OpenAI replacement and is the only way to choose a model on a self-hosted worker,
+   * where there is no dashboard to configure one.
+   */
+  model?: string
   messages: Message[]
   temperature?: number
   max_tokens?: number

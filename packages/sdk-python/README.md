@@ -182,6 +182,33 @@ patients, clients, or organizations and that matters for your compliance
 posture, you need a Pro/Enterprise key — `ner_ran=False` on Free is not a
 bug, it's the tier boundary made visible instead of silently assumed.
 
+## Model resolution
+
+`model` is optional on `chat.completions.create(...)`:
+
+```python
+# model omitted — the worker falls back to the cloud_model configured on
+# the API key (see client.keys.info().cloud_model)
+resp = client.chat.completions.create(
+    messages=[{"role": "user", "content": "..."}],
+)
+
+# model passed — always wins over the key's configured default
+resp = client.chat.completions.create(
+    model="gpt-5.4-nano",
+    messages=[{"role": "user", "content": "..."}],
+)
+```
+
+Passing `model` always takes precedence over the key's configured
+`cloud_model`. This keeps the SDK a drop-in OpenAI replacement, and on a
+self-hosted deployment — where there's no dashboard to configure a key's
+default model — it's the only way to choose one at all.
+
+When `model` is omitted, the SDK does not send the field (never as
+`model: null`); the worker only honors a request-supplied model when it's
+present as a string.
+
 ## No streaming
 
 The Privedge worker has no streaming code path — `stream` is not accepted

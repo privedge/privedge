@@ -456,6 +456,25 @@ function buildCloudRequest(env: Env, keyData: KeyData): CloudRequest {
   return { url, headers, modelPrefix: provider }
 }
 
+/**
+ * Resolves which cloud model to call: the request wins, the API key is the default.
+ *
+ * `cloud_model` is configured in the dashboard and validated per provider and tier when
+ * the key is created, but nothing used it at request time — the body's `model` went
+ * straight to the provider. Two consequences: the dashboard setting did nothing, and
+ * omitting `model` (reasonable if you already chose one when creating the key) sent a
+ * body with no model at all, which the provider rejects with a 400.
+ *
+ * Request-wins keeps the SDK a drop-in OpenAI replacement and is what self-hosted
+ * deployments need, since there is no dashboard there to configure anything.
+ */
+function resolveCloudModel(body: Record<string, unknown>, keyData: KeyData): Record<string, unknown> {
+  if (typeof body.model === 'string' && body.model) return body
+  const fallback = keyData.cloud_model
+  if (!fallback) return body
+  return { ...body, model: fallback }
+}
+
 /** Prefixes the body's `model` for the AI Gateway compat endpoint (e.g. `anthropic/claude-…`). No-op if empty prefix or already prefixed. */
 function applyModelPrefix(body: Record<string, unknown>, prefix: string): Record<string, unknown> {
   if (!prefix) return body
@@ -558,7 +577,9 @@ async function routeToCloudAnon(
   devCapture?: DevCapture,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
-  const outBody = normalizeOpenAIParams(applyModelPrefix(anonBody as Record<string, unknown>, modelPrefix))
+  const outBody = normalizeOpenAIParams(
+    applyModelPrefix(resolveCloudModel(anonBody as Record<string, unknown>, keyData), modelPrefix),
+  )
   if (devCapture) devCapture.promptSent = JSON.stringify(outBody)
   const response = await fetch(url, {
     method: 'POST',
@@ -614,7 +635,9 @@ async function routeToCloud(
   devCapture?: DevCapture,
 ): Promise<Response> {
   const { url, headers, modelPrefix } = buildCloudRequest(env, keyData)
-  const outBody = normalizeOpenAIParams(applyModelPrefix(body as Record<string, unknown>, modelPrefix))
+  const outBody = normalizeOpenAIParams(
+    applyModelPrefix(resolveCloudModel(body as Record<string, unknown>, keyData), modelPrefix),
+  )
   if (devCapture) devCapture.promptSent = JSON.stringify(outBody)
   const response = await fetch(url, {
     method: 'POST',
