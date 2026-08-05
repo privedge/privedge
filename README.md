@@ -259,8 +259,37 @@ http POST https://privedge-worker.<your-account>.workers.dev/v1/chat/completions
 - [x] Per-key edge model selection + edge rate limits
 - [x] NER model (Workers AI 70B, runs on-node — PII never leaves the edge)
 - [x] Unit tests — PII detection + anonymize/de-anonymize round-trip
-- [ ] Anthropic / Gemini support
+- [x] Multi-provider egress — OpenAI, Anthropic, Google, DeepSeek, Mistral
+- [x] BYOK — your provider key stays in Cloudflare, referenced by alias
+- [x] Spanish sectorial identifiers — CIF, NHC, bar registration no., NIG, cadastral reference
+- [x] Independent evaluation set — 306 Spanish documents, 920 labelled entities
+- [x] Python SDK
+- [ ] Streaming — needs a reassembly buffer so de-anonymization can restore tokens split across chunks
 - [ ] SOC2 / HIPAA certification
+- [ ] Portable deployment beyond Cloudflare — today the Worker depends on Workers AI, KV and `request.cf`
+
+## What this repository contains
+
+The point of publishing this is that you should not have to take our word for what the
+proxy does to your prompts. So it is worth being precise about what is here and what is not.
+
+**Here — the entire request path.** `packages/worker/src/index.ts` is the deployed entry
+point, and it imports exactly five modules, all of them in this repository: `auth`,
+`pii`, `logger`, `ratelimit`, `landing`. There is no sixth file, and no private fork. What
+detects PII, what replaces it, what is sent upstream and what is written to the logs is
+all readable here, along with the evaluation set the recall numbers come from.
+
+**Not here — the commercial layer.** The dashboard, billing, the account API and the
+key-issuing backend live in a private repository. They decide *which* key gets *which*
+policy; they never touch prompt content. A self-hosted deployment does not need them.
+
+**Self-hosting today means Cloudflare.** The Worker uses Workers AI for the NER layer and
+edge inference, KV for keys and rate limits, and `request.cf` for node geography. Running
+it elsewhere means replacing those, which is on the roadmap and is not done.
+
+If you find a gap between what this README claims and what the code does, that is a bug
+worth reporting — two such gaps (an advertised streaming option that was never
+implemented, and a per-key model setting the Worker ignored) were found and fixed this way.
 
 ## License
 

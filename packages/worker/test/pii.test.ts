@@ -171,10 +171,10 @@ test('anonymize redacts secrets (sk- keys and DB URIs)', () => {
   assert.ok(!out.includes('postgres://u:p@h:5432/db'), 'db uri leaked')
 })
 
-test('anonymize produces <TYPE_N> tokens and a populated reversal map', () => {
+test('anonymize produces [TYPE_N] tokens and a populated reversal map', () => {
   const { messages, map } = anonymize(msg('write to a@b.com'), [])
-  assert.match(messages[0].content, /<EMAIL_1>/)
-  assert.equal(map['<EMAIL_1>'], 'a@b.com')
+  assert.match(messages[0].content, /\[EMAIL_1\]/)
+  assert.equal(map['[EMAIL_1]'], 'a@b.com')
 })
 
 // ── round-trip integrity (anonymize → deanonymize === original) ───────────────
@@ -188,8 +188,8 @@ test('deanonymize restores the original text exactly', () => {
 test('round-trip with multiple occurrences of the same type', () => {
   const original = 'a@x.com talked to b@y.com and c@z.com'
   const { messages, map } = anonymize(msg(original), [])
-  assert.ok(messages[0].content.includes('<EMAIL_1>'))
-  assert.ok(messages[0].content.includes('<EMAIL_3>'))
+  assert.ok(messages[0].content.includes('[EMAIL_1]'))
+  assert.ok(messages[0].content.includes('[EMAIL_3]'))
   assert.equal(deanonymize(messages[0].content, map), original)
 })
 
@@ -202,18 +202,20 @@ test('round-trip survives 10+ tokens of one type (no <X_1> vs <X_11> collision)'
 })
 
 test('deanonymize is substring-safe across overlapping token numbers', () => {
-  const map = { '<PERSON_1>': 'Alice', '<PERSON_11>': 'Bob' }
-  assert.equal(deanonymize('<PERSON_11> and <PERSON_1>', map), 'Bob and Alice')
+  const map = { '[PERSON_1]': 'Alice', '[PERSON_11]': 'Bob' }
+  assert.equal(deanonymize('[PERSON_11] and [PERSON_1]', map), 'Bob and Alice')
 })
 
-test('anonymize keeps detection-only keywords (MEDICAL_KW) in the clear', () => {
-  // "patient"/"ECG" flag medical context for detection but are not identifying
-  // data — masking them would destroy the prompt's meaning for the cloud LLM.
+test('clinical vocabulary is neither detected nor masked', () => {
+  // "patient"/"ECG" describe medical context but identify nobody. They used to be
+  // matched as MEDICAL_KW, which inflated the entity count without protecting anyone;
+  // the pattern was removed. Masking them would also destroy the prompt's meaning for
+  // the cloud model, so the expectation is that they pass through untouched.
   const { messages } = anonymize(msg('Patient admitted with chest pain, ordered an ECG'), [])
   const out = messages[0].content
-  assert.ok(out.includes('Patient'), 'MEDICAL_KW was masked')
-  assert.ok(out.includes('ECG'), 'MEDICAL_KW was masked')
-  assert.ok(detectPII('Patient ordered an ECG').types.includes('MEDICAL_KW'), 'detection lost')
+  assert.ok(out.includes('Patient'), 'clinical vocabulary was masked')
+  assert.ok(out.includes('ECG'), 'clinical vocabulary was masked')
+  assert.equal(detectPII('Patient ordered an ECG').detected, false, 'clinical vocabulary must not count as PII')
 })
 
 // ── NER entities ──────────────────────────────────────────────────────────────
