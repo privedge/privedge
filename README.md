@@ -58,7 +58,8 @@ The strategy is set via the `pii_strategy` field on the API key (passed to the W
 | Package | Description |
 |---------|-------------|
 | [`packages/worker`](./packages/worker) | Cloudflare Worker — PII detection, anonymization + edge routing |
-| [`packages/sdk`](./packages/sdk) | `@privedge/sdk` — drop-in OpenAI replacement |
+| [`packages/sdk`](./packages/sdk) | `@privedge/sdk` — drop-in OpenAI replacement (TypeScript) |
+| [`packages/sdk-python`](./packages/sdk-python) | `privedge` — drop-in OpenAI replacement (Python), sync + async |
 
 ## PII Detection
 

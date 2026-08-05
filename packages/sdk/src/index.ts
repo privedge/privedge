@@ -13,7 +13,9 @@ export interface ChatCompletionParams {
   messages: Message[]
   temperature?: number
   max_tokens?: number
-  stream?: boolean
+  // No `stream` option: the worker has no streaming path, and `create()` parses the
+  // response as JSON. Accepting the flag would have promised something neither side
+  // delivers — it silently produced a broken response instead of a clear error.
   /**
    * Per-request routing strategy. Only honored when the API key is configured as `custom`
    * (defaults to `anonymize` if omitted). Keys fixed to `edge`/`anonymize` reject a conflicting
