@@ -484,3 +484,21 @@ class TestAsyncRequestConstruction:
 
         sent_body = json.loads(route.calls.last.request.content)
         assert sent_body["model"] == "gpt-5.4-nano"
+
+
+class TestPackageMetadata:
+    """The version was hardcoded in __init__.py and drifted: 1.0.0 shipped to PyPI
+    reporting __version__ == "0.1.0". It is now read from the installed distribution,
+    and this test keeps the two from diverging again."""
+
+    def test_version_matches_installed_distribution(self):
+        from importlib.metadata import version as pkg_version
+
+        import privedge
+
+        assert privedge.__version__ == pkg_version("privedge")
+
+    def test_version_is_not_a_placeholder(self):
+        import privedge
+
+        assert privedge.__version__ != "0.0.0+unknown", "package metadata not found"

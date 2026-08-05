@@ -32,7 +32,15 @@ from .types import (
     StrategyMode,
 )
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
+# Read from the installed distribution instead of hardcoding it: a literal here has to be
+# kept in sync with pyproject.toml by hand, and 1.0.0 shipped reporting 0.1.0 because it
+# wasn't. The fallback covers running from a source tree that was never installed.
+try:
+    __version__ = _pkg_version("privedge")
+except PackageNotFoundError:  # pragma: no cover - source checkout without install
+    __version__ = "0.0.0+unknown"
 
 __all__ = [
     "Privedge",
