@@ -24,23 +24,82 @@ Drop-in replacement for the OpenAI SDK. One header change, full compliance.
 
 ## Quickstart
 
+### TypeScript
+
+```bash
+npm install @privedge/sdk
+```
+
 ```typescript
 import Privedge from '@privedge/sdk'
 
 const ai = new Privedge({
   apiKey: 'your-privedge-api-key',
-  workerUrl: 'https://privedge-worker.workers.dev',
+  workerUrl: 'https://edge.privedge.io',
 })
 
 const res = await ai.chat.completions.create({
-  model: 'gpt-4',
+  model: 'gpt-5.4-nano',
   messages: [{ role: 'user', content: 'Summarize this patient record...' }],
 })
 
-console.log(res.routed_to)  // 'edge' | 'cloud'
-console.log(res.pii_matches) // number of PII tokens detected
-console.log(res.anonymized)  // true if PII was redacted before cloud call
+console.log(res.choices[0].message.content)
+console.log(res.routed_to)   // 'edge' | 'cloud'
+console.log(res.pii_matches) // PII values detected and replaced
+console.log(res.anonymized)  // true if PII was tokenized before the cloud call
+console.log(res.ner_ran)     // false on Free — see "PII Detection" below
 ```
+
+### Python
+
+```bash
+pip install privedge
+```
+
+```python
+from privedge import Privedge
+
+with Privedge(api_key="your-privedge-api-key", worker_url="https://edge.privedge.io") as ai:
+    res = ai.chat.completions.create(
+        model="gpt-5.4-nano",
+        messages=[{"role": "user", "content": "Summarize this patient record..."}],
+    )
+
+print(res.choices[0].message["content"])
+print(res.routed_to, res.pii_matches, res.anonymized, res.ner_ran)
+```
+
+The async client mirrors the same shape:
+
+```python
+from privedge import AsyncPrivedge
+
+async with AsyncPrivedge(api_key="...", worker_url="https://edge.privedge.io") as ai:
+    res = await ai.chat.completions.create(model="gpt-5.4-nano", messages=[...])
+```
+
+Errors are typed, so you can act on them instead of parsing a message:
+
+```python
+from privedge import PrivedgeNERUnavailableError, PrivedgeRateLimitError
+
+try:
+    res = ai.chat.completions.create(model="gpt-5.4-nano", messages=[...])
+except PrivedgeNERUnavailableError:
+    # Semantic detection was down, so the proxy refused to forward the prompt
+    # rather than send it without guaranteed anonymization. Nothing leaked —
+    # safe to retry.
+    ...
+except PrivedgeRateLimitError as e:
+    print(e.limit, e.remaining, e.reset)
+```
+
+Full reference: [`packages/sdk-python`](./packages/sdk-python).
+
+> Neither SDK exposes `stream`. The Worker has no streaming path today:
+> de-anonymization rebuilds the response with a full-text pass, and a token can
+> arrive split across chunks (`[PER` + `SON_1]`), so streaming needs a reassembly
+> buffer before it can be offered.
 
 ## Privacy Modes
 
@@ -71,21 +130,34 @@ Detection runs in two layers — which layers are active depends on your plan:
 | NER (Workers AI 70B) | — | ✅ |
 
 **Regex** (all tiers, deterministic, zero latency):
-- SSN, credit cards, IBAN, routing numbers, tax IDs
-- Email addresses
-- Spanish DNI / NIE, passports
-- Phone numbers (US + ES formats)
-- Dates (MM/DD/YYYY, YYYY-MM-DD)
-- Medical IDs: MRN, employee IDs, generic reference numbers
-- Medical keywords (`patient`, `cardiologist`, `troponin`…)
+- Spanish identifiers: DNI / NIE, CIF, social security, medical record no. (NHC), bar registration no., court case no. (NIG), cadastral reference
+- Financial: IBAN, credit cards, routing numbers, tax IDs
+- Contact: email addresses, phone numbers (US + ES formats)
+- Other: SSN, passports, dates, MRN, employee IDs, generic reference numbers
 - Secret patterns (API keys, JWTs, DB connection strings)
 
-**NER** (Pro / Enterprise — Workers AI `llama-3.3-70b`, same edge node):
+**NER** (Pro / Enterprise — Workers AI `llama-3.3-70b-fp8-fast`, same edge node):
 - Person names
-- Organizations (hospitals, insurers, law firms)
+- Organizations (hospitals, insurers, law firms, courts and other judicial bodies)
 - Street addresses
 
-When NER is active, both layers run with `Promise.all` — results are merged before anonymization. NER never calls an external API; it runs on the same Cloudflare node that received the request.
+NER never calls an external API: it runs on the same Cloudflare node that received the request. It runs after the regex pass, and its entities are merged before anonymization.
+
+### Measured recall
+
+Against an independent evaluation set — 306 Spanish legal and healthcare documents, 920 labelled entities, generated separately from the detector it measures:
+
+| Layer | Recall |
+|-------|--------|
+| Regex | 90.6% (416/459) |
+| NER | 99.8% (460/461) |
+| **Combined** | **95.2% (876/920)** |
+
+The dataset and runners live in [`packages/worker/eval/dataset`](./packages/worker/eval/dataset), including the known gaps. These are synthetic documents: independent of the detector, but not a substitute for validation against real customer data.
+
+### What Free does not cover
+
+The semantic layer is gated behind Pro/Enterprise, so on Free **names, organizations and addresses are never looked for** — an empty `ner_entities` there means "not searched", not "not present". Check `ner_ran` before treating a response as clean.
 
 ## Testing
 
