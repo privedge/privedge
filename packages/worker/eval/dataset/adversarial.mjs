@@ -197,26 +197,26 @@ push('sanidad', 'informe-alta', 'hard-name',
 
 push('sanidad', 'informe-alta', 'noisy-context',
   'DNI and phone inside a pipe-delimited table row — tests whether the [-\\s]? separator tolerance in the DNI pattern survives being flanked by table pipes with no padding space.',
-  b => b.t('| Campo | Valor |\n|---|---|\n| Paciente | Teresa Moreno Gil |\n| DNI |').e('DNI', '87654321X').t('|\n| Teléfono |').e('PHONE', '699887766').t('|\n'))
+  b => b.t('| Campo | Valor |\n|---|---|\n| Paciente | ').e('PERSON', 'Teresa Moreno Gil', { nerScope: true }).t(' |\n| DNI |').e('DNI', '87654321X').t('|\n| Teléfono |').e('PHONE', '699887766').t('|\n'))
 
 push('legal', 'demanda', 'noisy-context',
-  'NIF broken across a line wrap (line ends right after the 8 digits, hyphen and check letter start the next line) — a naive extraction pipeline that reads line-by-line would split this; \\b\\d{8}[-\\s]?[A-Z]\\b technically still matches whitespace/newline as separator since \\s includes \\n, worth confirming empirically.',
-  b => b.t('El demandante, con DNI número 12345678\n').e('DNI', '-Z').t(' según consta en autos, presenta el presente escrito.'))
+  'NIF broken across a line wrap (line ends right after the 8 digits, hyphen and check letter start the next line) — a naive extraction pipeline that reads line-by-line would split this. Confirmed empirically 2026-08-05: the DNI pattern\'s [-.\\s]{0,2} separator class includes \\n, so the detector captures the WHOLE identifier across the wrap, which is the correct production behaviour. Ground truth labels the full span accordingly.',
+  b => b.t('El demandante, con DNI número ').e('DNI', '12345678\n-Z').t(' según consta en autos, presenta el presente escrito.'))
 
 push('legal', 'contrato', 'noisy-context',
   'List of multiple parties each with their own DNI, formatted as a numbered list — tests that overlap-resolution in detectPII() does not accidentally merge or skip adjacent entities across list items.',
   b => b.t('Partes firmantes:\n')
-    .t('1. ').e('PERSON', 'Javier Ortega Blanco').t(', DNI ').e('DNI', '11223344B').t('\n')
-    .t('2. ').e('PERSON', 'Beatriz Suárez Molina').t(', DNI ').e('DNI', '55667788C').t('\n')
-    .t('3. ').e('PERSON', 'Ramón Gil Herrero').t(', DNI ').e('DNI', '99001122D').t('\n'))
+    .t('1. ').e('PERSON', 'Javier Ortega Blanco', { nerScope: true }).t(', DNI ').e('DNI', '11223344B').t('\n')
+    .t('2. ').e('PERSON', 'Beatriz Suárez Molina', { nerScope: true }).t(', DNI ').e('DNI', '55667788C').t('\n')
+    .t('3. ').e('PERSON', 'Ramón Gil Herrero', { nerScope: true }).t(', DNI ').e('DNI', '99001122D').t('\n'))
 
 push('sanidad', 'interconsulta', 'noisy-context',
   'Expediente-style header block with field:value pairs stacked with no blank lines between them and inconsistent colon spacing — tests robustness against irregular whitespace immediately before the ID value.',
-  b => b.t('PACIENTE:').e('PERSON', 'Julia Navarro Campos').t('\nNHC:').e('NHC', 'NHC-2025-3391').t('\nTELF:').e('PHONE', '688442211').t('\nCENTRO:').e('ORG', 'Hospital Clínico San Carlos').t('\n'))
+  b => b.t('PACIENTE:').e('PERSON', 'Julia Navarro Campos', { nerScope: true }).t('\nNHC:').e('NHC', 'NHC-2025-3391').t('\nTELF:').e('PHONE', '688442211').t('\nCENTRO:').e('ORG', 'Hospital Clínico San Carlos', { nerScope: true }).t('\n'))
 
 push('legal', 'disciplinario', 'noisy-context',
-  'IBAN split across two lines by a hard line-break in the middle of the digit groups (common when copy-pasting from a PDF) — the pattern requires \\s between groups but a newline mid-way through a 4-digit group itself (not between groups) will break the match; documented as expected miss.',
-  b => b.t('Cuenta de abono: ES91 2100 0418 4502\n').e('IBAN_SPLIT_MIDGROUP', '0005 1332', { expectedMatch: false }).t(' según los datos facilitados por el empleado.'))
+  'IBAN split across two lines by a hard line-break between digit groups (common when copy-pasting from a PDF). Confirmed empirically 2026-08-05: the group separator matches \\n as well as a space, so the detector captures the WHOLE IBAN across the wrap — better than this case originally anticipated (it was documented as an expected miss). Ground truth labels the full span as a real IBAN.',
+  b => b.t('Cuenta de abono: ').e('IBAN', 'ES91 2100 0418 4502\n0005 1332').t(' según los datos facilitados por el empleado.'))
 
 push('sanidad', 'nota-urgencias', 'noisy-context',
   'Multiple phone numbers in a contact list separated only by semicolons with no space — tests the phone pattern negative lookaround (?!\\d) does not spill across the semicolon into the next number.',
@@ -321,7 +321,7 @@ push('sanidad', 'nota-urgencias', 'noisy-context',
 
 push('legal', 'contrato', 'noisy-context',
   'Table with misaligned columns using tabs instead of consistent spacing — IBAN and phone in adjacent cells.',
-  b => b.t('Titular\tIBAN\tTeléfono\n').e('PERSON', 'Cristina Vega Romero').t('\t').e('IBAN', 'ES55 0049 1500 0512 3456').t('\t').e('PHONE', '911223344').t('\n'))
+  b => b.t('Titular\tIBAN\tTeléfono\n').e('PERSON', 'Cristina Vega Romero', { nerScope: true }).t('\t').e('IBAN', 'ES55 0049 1500 0512 3456').t('\t').e('PHONE', '911223344').t('\n'))
 
 // ── Volume expansion ─────────────────────────────────────────────────────────
 // Same categories, more instances, driven by a seeded RNG over pools.mjs so

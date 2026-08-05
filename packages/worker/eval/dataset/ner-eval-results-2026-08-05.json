@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-08-05T17:21:09.092Z",
+  "scope": "NER-only (PERSON/ORG/ADDRESS via ner-eval-worker.ts, production nerPrompt) — regex layer measured separately by run-dataset-eval.mjs",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "port": "8788",
+  "limited": null,
+  "totals": {
+    "cases": 306,
+    "errors": 0,
+    "nerExpected": 468,
+    "nerFound": 468,
+    "nerRecallPct": 100,
+    "returned": 474,
+    "verbatim": 473,
+    "paraphrased": 1,
+    "falsePositives": 5
+  },
+  "latency": {
+    "avgMs": 754,
+    "p50Ms": 522,
+    "p95Ms": 1640,
+    "n": 306
+  },
+  "recallByType": {
+    "PERSON": {
+      "expected": 287,
+      "found": 287
+    },
+    "ADDRESS": {
+      "expected": 45,
+      "found": 45
+    },
+    "ORG": {
+      "expected": 136,
+      "found": 136
+    }
+  },
+  "falseNegatives": [],
+  "falsePositives": [
+    {
+      "caseId": "adversarial-030",
+      "domain": "legal",
+      "kind": "consulta",
+      "source": "adversarial",
+      "type": "ADDRESS",
+      "value": "la ciudad de León",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-032",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "Parroquia de Santa María",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-040",
+      "domain": "legal",
+      "kind": "consulta",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "Tribunal Supremo",
+      "caseHadNerEntities": false
+    },
+    {
+      "caseId": "adversarial-064",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ORG",
+      "value": "JUZGADO DE PRIMERA INSTANCIA",
+      "caseHadNerEntities": true
+    },
+    {
+      "caseId": "adversarial-121",
+      "domain": "legal",
+      "kind": "demanda",
+      "source": "adversarial",
+      "type": "ADDRESS",
+      "value": "León capital",
+      "caseHadNerEntities": true
+    }
+  ],
+  "paraphrasedEntities": [
+    {
+      "caseId": "adversarial-030",
+      "type": "ORG",
+      "value": ""
+    }
+  ],
+  "errorsDetail": [],
+  "combined": {
+    "regexSource": "dataset-eval-results-2026-08-05.json",
+    "regexFound": 418,
+    "regexExpected": 453,
+    "nerFound": 468,
+    "nerExpected": 468,
+    "combinedFound": 886,
+    "combinedExpected": 921,
+    "combinedPct": 96.2
+  }
+}
