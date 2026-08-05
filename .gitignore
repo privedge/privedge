@@ -19,3 +19,6 @@ build/
 
 # Stray npm lockfile: this is a pnpm workspace (see pnpm-lock.yaml at the root).
 package-lock.json
+
+# npm pack output (without --dry-run it writes a tarball into the package dir)
+*.tgz
