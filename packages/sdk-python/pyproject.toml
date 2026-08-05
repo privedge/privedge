@@ -7,14 +7,16 @@ name = "privedge"
 version = "0.1.0"
 description = "Privacy on the edge — drop-in AI proxy client with automatic PII routing"
 readme = "README.md"
-license = { text = "MIT" }
+# PEP 639: an SPDX string, not the deprecated { text = ... } table.
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.9"
 authors = [{ name = "Privedge" }]
 keywords = ["ai", "privacy", "edge", "openai", "pii", "compliance", "hipaa"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
+  # No "License ::" classifier: it is mutually exclusive with the SPDX `license` field.
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -31,9 +33,13 @@ dev = ["pytest>=7", "pytest-asyncio>=0.21", "respx>=0.20"]
 [project.urls]
 Homepage = "https://privedge.io"
 Repository = "https://github.com/privedge/privedge"
+Issues = "https://github.com/privedge/privedge/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["privedge"]
+# py.typed ships the inline type hints to consumers (PEP 561); without it the
+# "Typing :: Typed" classifier is a claim type checkers cannot act on.
+artifacts = ["privedge/py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
