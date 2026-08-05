@@ -39,7 +39,7 @@
  *        node run-ner-eval.mjs 8788 --limit=5  (smoke test a handful of cases)
  * Writes ner-eval-results-<date>.json + prints a console summary.
  */
-import { writeFileSync } from 'node:fs'
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { generateAll } from './generate.mjs'
 import { cases as adversarialCases } from './adversarial.mjs'
 
@@ -249,16 +249,39 @@ const nerRecallPct = totalNerExpected ? +(100 * totalFound / totalNerExpected).t
 // (combining a partial NER sweep with the full regex total would misrepresent
 // the product's real combined recall).
 let combined = null
-if (!LIMIT) {
-  const REGEX_FOUND = 416 // from run-dataset-eval.mjs's published 90.6% result (416/459)
-  const REGEX_EXPECTED = 459
-  const combinedFound = REGEX_FOUND + totalFound
-  const combinedExpected = REGEX_EXPECTED + totalNerExpected
-  combined = {
-    regexFound: REGEX_FOUND, regexExpected: REGEX_EXPECTED,
-    nerFound: totalFound, nerExpected: totalNerExpected,
-    combinedFound, combinedExpected,
-    combinedPct: +(100 * combinedFound / combinedExpected).toFixed(1),
+let combinedSkipReason = null
+if (LIMIT) {
+  combinedSkipReason = 'this was a --limit smoke test, not a full sweep'
+} else {
+  // Read the regex numerator from the newest run-dataset-eval.mjs JSON rather
+  // than hardcoding it: the denominator below is already derived from the live
+  // dataset, so a stale hardcoded numerator would silently mix a fresh NER
+  // sweep with a regex result measured against a different ground truth.
+  const regexReports = readdirSync(new URL('.', import.meta.url))
+    .filter(f => /^dataset-eval-results-\d{4}-\d{2}-\d{2}\.json$/.test(f))
+    .sort()
+  const latest = regexReports.at(-1)
+  if (!latest) {
+    combinedSkipReason = 'no dataset-eval-results-*.json found — run run-dataset-eval.mjs first'
+  } else {
+    const regexTotals = JSON.parse(readFileSync(new URL(latest, import.meta.url), 'utf8')).totals
+    // The regex sweep must have scored the same ground truth this run derived
+    // its NER scope from, or the two halves are not additive.
+    if (regexTotals.recallExpected !== totalRegexScopeEntities) {
+      combinedSkipReason =
+        `${latest} scored ${regexTotals.recallExpected} regex-scope entities but the current ` +
+        `dataset has ${totalRegexScopeEntities} — re-run run-dataset-eval.mjs against this ground truth`
+    } else {
+      const combinedFound = regexTotals.recallFound + totalFound
+      const combinedExpected = regexTotals.recallExpected + totalNerExpected
+      combined = {
+        regexSource: latest,
+        regexFound: regexTotals.recallFound, regexExpected: regexTotals.recallExpected,
+        nerFound: totalFound, nerExpected: totalNerExpected,
+        combinedFound, combinedExpected,
+        combinedPct: +(100 * combinedFound / combinedExpected).toFixed(1),
+      }
+    }
   }
 }
 
@@ -305,7 +328,7 @@ if (combined) {
   console.log(`  NER:      ${combined.nerFound}/${combined.nerExpected}  (${nerRecallPct}%)`)
   console.log(`  COMBINED: ${combined.combinedFound}/${combined.combinedExpected}  (${combined.combinedPct}%)`)
 } else {
-  console.log(`\n(Skipping combined regex+NER number: this was a --limit smoke test, not a full sweep.)`)
+  console.log(`\n(Skipping combined regex+NER number: ${combinedSkipReason}.)`)
 }
 
 // ── Write JSON ────────────────────────────────────────────────────────────
